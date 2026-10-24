@@ -5,7 +5,12 @@ USB stick and no computer.** Verified on a stick-free power cycle:
 `/run/.tvroot-hook` and `/run/.tvroot-debloat` both present, `debloat.log`
 written ~21 s after power-on, six `/run` masks, ACR trio inactive.
 
-See [../WRITEUP.md](../WRITEUP.md) for the full story and
+Verified on **two consecutive stick-free boots**:
+`=== tvroot boot entry uptime=0.74s uid=0 ctx=_` and
+`=== tvroot boot entry uptime=0.73s uid=0 ctx=_`, with `/opt/media` empty and no
+`/dev/sd*` present.
+
+See [WRITEUP.md](WRITEUP.md) for the full story and
 [FINDINGS.md](FINDINGS.md) §16–§21 for the measurements.
 
 ## What runs at every boot
