@@ -8,6 +8,20 @@ point is not to read everything — it is to be able to answer, for a TV you own
 > what does this binary do, what does this firmware contain, and why does this
 > protection reject my file?
 
+
+```mermaid
+flowchart TD
+    S0["Stage 0 · Tooling<br/>Ghidra · ILSpy · binutils · repo scripts"]
+    S1["Stage 1 · Static triage<br/>file → readelf → strings → Ghidra"]
+    S2["Stage 2 · Managed code<br/>ILSpy on .NET assemblies"]
+    S3["Stage 3 · Firmware<br/>container → TEE decrypt → kernel → addresses"]
+    S4["Stage 4 · Dynamic on-device<br/>SDB capture · root shell · dlogutil"]
+    S5["Stage 5 · Write it down<br/>target page: measured facts + what failed"]
+
+    S0 --> S1 --> S2 --> S3 --> S4 --> S5
+    S5 -.->|next target| S0
+```
+
 ## Stage 0 — tooling you actually need here
 
 | Tool | Why |
