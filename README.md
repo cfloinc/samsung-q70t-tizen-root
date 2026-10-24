@@ -65,6 +65,13 @@ A target page states the firmware string next to any address table. Addresses ar
 | **[METHODOLOGY.md](METHODOLOGY.md)** | Build/sign/install a dev-signed .NET helper with no Samsung account |
 | **[DEBLOAT-STATE.md](DEBLOAT-STATE.md)** | What is deployed, hashes, inspect and restore |
 
+### Learning and tooling
+
+| Document | Contents |
+|---|---|
+| **[docs/roadmap.md](docs/roadmap.md)** | A staged path from static triage to firmware decryption to on-device dynamic work, adapted to this project's artefacts, with curated external material (REA, Ghidra, ILSpy, books, courses, papers) |
+| **[docs/tooling.md](docs/tooling.md)** | Which tools apply to Tizen TVs and which do not — plus a triage recipe and the Ghidra base address for the raw kernel |
+
 ### Tools
 
 | Tool | Purpose |
