@@ -1,10 +1,14 @@
-# Rooting a Samsung Q70T (Tizen 6.0) and making the debloat permanent
+# Samsung Tizen TV — reverse engineering notes and tools
 
-A field report and toolkit from rooting a **Samsung QN65Q70TAFXZA** (Q70T, 2020,
-NIKEM platform, Tizen 6.0, kernel 4.1.10, ARMv7) and removing the advertising,
-telemetry and content-recognition services **permanently** — the TV now applies
-its own debloat as root **0.74 seconds after every boot**, with no USB stick and
-no computer attached.
+Field notes from taking apart a retail Samsung Tizen TV: the SDB foothold, the
+encrypted firmware container, the TrustZone decryption path, kernel recovery,
+address derivation, UEP, the capability model, the boot chain, and what actually
+survives a reboot.
+
+The first fully documented target is a **QN65Q70TAFXZA** (2020 Q70T, NIKEM,
+Tizen 6.0, kernel 4.1.10, ARMv7), which now roots itself and re-applies its
+debloat **as root 0.74 seconds after every boot**, with no USB stick and no
+computer attached:
 
 ```
 === tvroot boot entry uptime=0.74s uid=0 ctx=_
@@ -18,27 +22,63 @@ no computer attached.
       org.tizen.remotepc: deactivating
 ```
 
-> **Warning.** This is a hobby project, not an installer. It involves a kernel
-> exploit, raw block writes to a read-only filesystem, and a patched boot
-> script. A mistake can leave the TV unbootable. Only do this on hardware you
-> own, and read the whole writeup first. No warranty of any kind.
+> **Warning.** Hobby research, not an installer. It involves a kernel exploit,
+> raw block writes to a read-only filesystem and a patched boot script. A mistake
+> can leave a TV unbootable. Only on hardware you own. No warranty.
 
-## What is in this repository
+---
+
+## How to read this repository
+
+### Methodology — the transferable part
+
+| # | Document | Question |
+|---|---|---|
+| 01 | [Foothold over sdb](docs/methodology/01-foothold.md) | How do I get code execution as `uid 901`? |
+| 02 | [Firmware container](docs/methodology/02-firmware-container.md) | What is inside `upgrade.msd`? |
+| 03 | [TEE decryption](docs/methodology/03-tee-decrypt.md) | How do I decrypt it without a key? |
+| 04 | [Kernel recovery](docs/methodology/04-kernel-recovery.md) | How do I get a usable kernel image? |
+| 05 | [Address derivation](docs/methodology/05-address-derivation.md) | How do I find gadgets for *my* build? |
+| 06 | [UEP](docs/methodology/06-uep.md) | Why are unsigned scripts refused, and what bypasses it? |
+| 07 | [Capabilities and zones](docs/methodology/07-capabilities-and-zones.md) | Where do capabilities come from, and where are they stripped? |
+| 08 | [Boot chain and persistence](docs/methodology/08-boot-chain-and-persistence.md) | What runs as root at boot, and how do I hook it? |
+| 09 | [Debloat](docs/methodology/09-debloat.md) | Which disabling mechanisms survive a reboot? |
+| 10 | [Debug channels](docs/methodology/10-debug-channels.md) | Why did my command silently not run? |
+
+### Targets — measured per device
+
+| Target | Platform | Year | Root path | Persistence |
+|---|---|---|---|---|
+| [QN65Q70TAFXZA](docs/targets/q70t-nikem-2020.md) | `20_NIKEM_QTV` | 2020 | exFAT USB kernel LPE | raw-block `profile.d` patch |
+
+A target page states the firmware string next to any address table. Addresses are
+**not portable** across builds.
+
+### Case study and raw evidence
 
 | Document | Contents |
 |---|---|
-| **[WRITEUP.md](WRITEUP.md)** | The full narrative: target, timeline, exploit chain, firmware decryption, debloat mechanics, persistence design, UEP bypass, verification, dead ends, credits. **Start here.** |
-| **[FINDINGS.md](FINDINGS.md)** | The raw field journal — every measurement, hash, failure and correction, in order, including the negative results. |
-| **[DEBLOAT-STATE.md](DEBLOAT-STATE.md)** | Exactly what is deployed on the TV, how to inspect it, and how to undo it. |
-| `persistent-hook/` | The boot-hook kit: `boot.sh`, `debloat.sh`, a generic same-size patcher (`build-patch.py`), the hook fragment, the apply/rollback tooling. |
-| `tools/` | `foreshell.py` (resilient SDB command runner) and `tvshell_server.py` (persistent root-shell server). |
-| **[LESSONS.md](LESSONS.md)** | 89 transferable rules of thumb (Developer Mode, certificates, SDB wedges, debloat, persistence) if you own a different Tizen model. |
-| **[METHODOLOGY.md](METHODOLOGY.md)** | How to build, sign and install a dev-signed .NET helper app on a retail Tizen TV with no Samsung account. |
-| **[USB-EXPLOIT.md](USB-EXPLOIT.md)** | The full derivation: firmware container, TEE decrypt, kernel recovery, gadget selection, cave layout, trigger build. |
-| **[SANITIZATION.md](SANITIZATION.md)** | What was redacted from this public copy and how to re-check it. |
-| **[NOTICE.md](NOTICE.md)** | Prior art, credits, and what is deliberately *not* included. |
+| **[WRITEUP.md](WRITEUP.md)** | The finished Q70T narrative: timeline, chain, verification, dead ends |
+| **[USB-EXPLOIT.md](USB-EXPLOIT.md)** | Full derivation: container, TEE, kernel, gadget selection, cave layout, trigger |
+| **[FINDINGS.md](FINDINGS.md)** | Chronological journal — every measurement, failure and correction |
+| **[LESSONS.md](LESSONS.md)** | 89 transferable rules of thumb |
+| **[METHODOLOGY.md](METHODOLOGY.md)** | Build/sign/install a dev-signed .NET helper with no Samsung account |
+| **[DEBLOAT-STATE.md](DEBLOAT-STATE.md)** | What is deployed, hashes, inspect and restore |
 
-## The chain, in one diagram
+### Tools
+
+| Tool | Purpose |
+|---|---|
+| `tools/foreshell.py` | Resilient SDB command runner (injection + capture + wedge recovery) |
+| `tools/tvshell_server.py` | Persistent beacon/root-shell server with keepalive |
+| `tools/uep-test.sh` | Empirically determines which script invocations UEP allows |
+| `tools/capscan.sh` | Compact capability-bearing binary inventory |
+| `tools/tee-client/` | The TrustZone client that decrypts the firmware container |
+| `tools/persistent-hook/` | Same-size `profile.d` patcher, boot hook, debloat, rollback |
+
+---
+
+## The chain in one diagram
 
 ```
 SDB injection (Developer Mode)            uid 901 (sdk)
@@ -48,53 +88,49 @@ SDB injection (Developer Mode)            uid 901 (sdk)
    │
    ├── USB exFAT trigger ─────────────────  kernel LPE → uid 0, SMACK "_"
    │
-   ├── raw block write (rootfs p19) ──────  776-byte profile.d patch, same size
+   ├── raw block write (rootfs) ──────────  same-size profile.d patch
    │
    └── boot: tizen-system-env.service → /etc/profile → profile.d
             └── UEP bypass: sh -c "$(cat boot.sh)"
                      └── sh -c "$(cat debloat.sh)"
-                              └── 6 /run masks + stops at uptime 0.74 s
+                              └── /run masks + stops at uptime 0.74 s
 ```
 
-The two ideas that make it work:
+Two ideas carry it:
 
-1. **The TV decrypts its own firmware.** No Samsung signing key is needed: the
-   SWU TrustZone application accepts the encrypted blob from an ordinary
-   unprivileged app and hands back plaintext.
-2. **Never `execve()` an unsigned script.** Tizen's UEP hooks script *file
-   loading*, so `sh /path/x.sh` is refused even as root. Passing the content as
-   an argument — `sh -c "$(cat /path/x.sh)"` — never touches that path.
+1. **The TV decrypts its own firmware.** No signing key needed: the SWU
+   TrustZone application accepts the encrypted blob from an ordinary app.
+2. **Never `execve()` an unsigned script.** UEP hooks script *file loading*;
+   `sh -c "$(cat file)"` never gives it a file to inspect.
 
-## Reproducing it
+---
 
-The writeup has the full sequence ([§14](WRITEUP.md#14-reproducing-it)). In
-short:
+## Starting on a different model
 
-1. Enable Developer Mode and confirm the SDB injection foothold.
-2. Decrypt your own firmware image with the TEEC client; verify the section CRC.
-3. Derive or confirm the kernel gadget addresses for **your** build.
-4. Build the USB trigger — the cave blob must stay within the validated size
-   (this model: `num_ext = 67`) — arm the listener, and boot the TV with the
-   stick inserted.
-5. From the root shell, stage the hook kit to `/opt` and patch the profile.d
-   script in place, same size, with `build-patch.py` + `apply-persistent-hook.sh`.
-6. Remove the stick, power cycle, and read `/opt/usr/share/tvroot/debloat.log`
-   for `uptime=<1s`.
+1. Inventory the device: firmware string, kernel, runtime dirs, `capscan.sh`,
+   read-only vs writable partitions, what is in `/etc/profile.d`.
+2. Confirm the foothold and what uid it gives you.
+3. Decide which root path the device class supports:
+   * `/usr/bin/dotnet` with `cap_sys_admin` → archive-root may apply;
+   * no dotnet host, launcher plugins only → managed code runs capless (see 07);
+   * a world-writable DMA device → physical-memory route.
+4. Get the firmware container, decrypt via the TEE, recover the kernel, derive
+   addresses **for that build**.
+5. For persistence, look for a boot path that sources or executes something on a
+   writable partition, and verify it runs as root.
+6. Test every claim on the device; write down the firmware string next to every
+   address.
 
-**Every address and offset in the writeup is specific to firmware
-`T-NKMAKUC-2743.0`-class images.** Other models/firmware will need their own.
+---
 
-## Measured effect
+## Legal and safety
 
-* Six runtime masks re-applied at every boot; ACR, content-recognition,
-  vision-data and the update manager inactive from boot.
-* Free RAM roughly 213 MB → 830 MB after the ACR/ad/TV-Plus services are gone.
-* Load average is **not** a useful performance signal on these sets: about ten
-  processes sit in `D` state waiting on absent tuner hardware, so idle load
-  stays around 11–15 regardless of CPU work.
+Research on hardware you own, for interoperability and to remove unwanted
+behaviour from your own device. Nothing here is affiliated with Samsung. No
+firmware, Samsung binaries, keys or vendor scripts are included — see
+[NOTICE.md](NOTICE.md) and [SANITIZATION.md](SANITIZATION.md).
 
 ## License
 
-MIT for the code and documentation in this repository — see [LICENSE](LICENSE).
-Third-party projects referenced here keep their own licenses; no Samsung
-firmware, binaries, keys, or vendor scripts are included. See [NOTICE.md](NOTICE.md).
+MIT for the code and documentation — see [LICENSE](LICENSE). Third-party work
+retains its own license.

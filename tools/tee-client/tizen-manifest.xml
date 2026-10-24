@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="4" package="org.tvroot6.tee" version="0.1.0">
+    <profile name="tv" />
+    <ui-application appid="org.tvroot6.tee" exec="tee.dll" launch_mode="single" multiple="true" nodisplay="true" taskmanage="false" type="dotnet">
+        <label>tee</label>
+    </ui-application>
+</manifest>
