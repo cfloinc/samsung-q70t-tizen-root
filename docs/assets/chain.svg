@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#0d1117"/>
+  <text x="64" y="72" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="19" letter-spacing="1.5">SAMSUNG QN65Q70TAFXZA · 2020 · TIZEN 6.0 · ARMv7 · KERNEL 4.1.10</text>
+  <text x="64" y="128" fill="#e6edf3" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="46" font-weight="700">From SDB shell to a self-debloating TV</text>
+  <text x="64" y="164" fill="#8b949e" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="21">six steps, and the one bypass that made it persist</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <g>
+      <rect x="64" y="210" width="556" height="104" rx="10" fill="#161b22" stroke="#30363d"/>
+      <text x="88" y="244" fill="#58a6ff" font-size="17">01 · FOOTHOLD</text>
+      <text x="88" y="275" fill="#e6edf3" font-size="19">SDB injection (SVE-2025-50109)</text>
+      <text x="88" y="299" fill="#8b949e" font-size="17">uid 901 (sdk) · SMACK "System"</text>
+    </g>
+    <g>
+      <rect x="660" y="210" width="556" height="104" rx="10" fill="#161b22" stroke="#30363d"/>
+      <text x="684" y="244" fill="#58a6ff" font-size="17">02 · FIRMWARE</text>
+      <text x="684" y="275" fill="#e6edf3" font-size="19">SWU TrustZone decrypts the container</text>
+      <text x="684" y="299" fill="#8b949e" font-size="17">no signing key · uid 5001, zero caps</text>
+    </g>
+    <g>
+      <rect x="64" y="334" width="556" height="104" rx="10" fill="#161b22" stroke="#30363d"/>
+      <text x="88" y="368" fill="#58a6ff" font-size="17">03 · KERNEL</text>
+      <text x="88" y="399" fill="#e6edf3" font-size="19">raw 4.1.10 image → gadget addresses</text>
+      <text x="88" y="423" fill="#8b949e" font-size="17">CRC + banner verified · no KASLR</text>
+    </g>
+    <g>
+      <rect x="660" y="334" width="556" height="104" rx="10" fill="#161b22" stroke="#30363d"/>
+      <text x="684" y="368" fill="#58a6ff" font-size="17">04 · ROOT</text>
+      <text x="684" y="399" fill="#e6edf3" font-size="19">exFAT USB trigger → kernel LPE</text>
+      <text x="684" y="423" fill="#8b949e" font-size="17">uid 0 · context "_" (no SMACK bound)</text>
+    </g>
+    <g>
+      <rect x="64" y="458" width="556" height="104" rx="10" fill="#161b22" stroke="#f85149"/>
+      <text x="88" y="492" fill="#f85149" font-size="17">05 · THE WALL → BYPASS</text>
+      <text x="88" y="523" fill="#e6edf3" font-size="19">UEP refuses unsigned scripts</text>
+      <text x="88" y="547" fill="#8b949e" font-size="17">sh -c "$(cat …)" never execve()s</text>
+    </g>
+    <g>
+      <rect x="660" y="458" width="556" height="104" rx="10" fill="#161b22" stroke="#30363d"/>
+      <text x="684" y="492" fill="#58a6ff" font-size="17">06 · PERSISTENCE</text>
+      <text x="684" y="523" fill="#e6edf3" font-size="19">776-byte profile.d patch, same size</text>
+      <text x="684" y="547" fill="#8b949e" font-size="17">raw block write · byte-exact backup</text>
+    </g>
+  </g>
+
+  <rect x="64" y="594" width="1152" height="86" rx="10" fill="#0f2a17" stroke="#3fb950"/>
+  <text x="88" y="628" fill="#3fb950" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17">RESULT · VERIFIED ON TWO STICK-FREE POWER CYCLES</text>
+  <text x="88" y="660" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="21">uptime=0.73s uid=0 ctx=_   ·   6 masks   ·   ACR / vision / ads inactive</text>
+</svg>
