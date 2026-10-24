@@ -84,7 +84,7 @@ That last section is the most valuable one to the next person.
 
 ## External material
 
-**Start here (REA):**
+### Start here (REA)
 [repository](https://github.com/morluto/rea) ·
 [website](https://rea.tools) ·
 [installation](https://github.com/morluto/rea/blob/main/docs/installation.md) ·
@@ -93,37 +93,75 @@ That last section is the most valuable one to the next person.
 [guided MCP prompts](https://github.com/morluto/rea/blob/main/docs/mcp-prompts.md) ·
 [REA-Prompts](https://github.com/JoasASantos/REA-Prompts)
 
-**Tool repos:**
+Install: `npx rea-agents@latest setup`
+
+### Watch and follow along
+[Clone any software in minutes](https://youtube.com/watch?v=FnB9tHKBJXQ) ·
+[REA + Pi coding agent tutorial](https://datacamp.com/tutorial/reverse-engineer-anything-rea-tutorial) ·
+[Ghidra for beginners](https://youtube.com/watch?v=OFAxXXcLXbc) ·
+[Frida for Android RE](https://youtube.com/watch?v=GHh9P-Dyq1w) ·
+[pwn.college RE](https://pwn.college/intro-re-pwn~5933fc84/reversing/) ·
+[Malware Unicorn RE101](https://malwareunicorn.org/workshops/re101)
+
+### Investigated cases (read one before starting your own)
+[Notes Export](https://rea.tools/first-investigation/) ·
+[Notion Clipboard](https://rea.tools/showcase/notion/) ·
+[DX-Ball reconstruction](https://rea.tools/showcase/dx-ball/) ·
+[Aegis APK](https://rea.tools/showcase/aegis/) ·
+[TH04 bullet patterns](https://rea.tools/showcase/th04/)
+
+The DX-Ball case is the one worth studying for method: the reconstructed
+function was checked on 3,205 inputs and the compiled result matched the original
+63 bytes. That is a measurable check, not "the AI wrote plausible code".
+
+### Tool repositories
+[REA](https://github.com/morluto/rea) ·
+[awesome-reverse-engineering](https://github.com/morluto/awesome-reverse-engineering) ·
+[rea-gems](https://github.com/sqwu/rea-gems) ·
+[awesome-reverse-engineered](https://github.com/alexgaoth/awesome-reverse-engineered) ·
 [Ghidra](https://github.com/NationalSecurityAgency/ghidra) ·
-[ILSpy](https://github.com/icsharpcode/ILSpy) ·
 [JADX](https://github.com/skylot/jadx) ·
 [Frida](https://github.com/frida/frida) ·
+[ILSpy](https://github.com/icsharpcode/ILSpy) ·
 [x64dbg](https://github.com/x64dbg/x64dbg) ·
-[awesome-reverse-engineering](https://github.com/morluto/awesome-reverse-engineering) ·
-[awesome-reverse-engineered](https://github.com/alexgaoth/awesome-reverse-engineered)
+[Cutter](https://github.com/rizinorg/cutter) ·
+[angr](https://github.com/angr/angr)
 
-**Books:**
+### Books
 [The Ghidra Book, 2e](https://nostarch.com/ghidra-book-2e) ·
 [Reverse Engineering for Beginners](https://go.yurichev.com) ·
 [Practical Binary Analysis](https://nostarch.com/binaryanalysis/) ·
 [Practical Malware Analysis](https://nostarch.com/malware) ·
-[Reversing: Secrets of RE](https://wiley.com/en-us/Reversing%3A+Secrets+of+Reverse+Engineering-p-9780764574818)
+[The Android Malware Handbook](https://nostarch.com/androidmalwarehandbook) ·
+[Reversing: Secrets of Reverse Engineering](https://wiley.com/en-us/Reversing%3A+Secrets+of+Reverse+Engineering-p-9780764574818)
 
-**Practice:**
+### Research papers
+[LLM4Decompile](https://arxiv.org/abs/2403.05286) ·
+[AutoDecompiler](https://arxiv.org/abs/2606.16162) ·
+[SALT4Decompile](https://arxiv.org/abs/2509.14646) ·
+[Decomperson](https://usenix.org/conference/usenixsecurity22/presentation/burk) ·
+[DIRTY](https://usenix.org/system/files/sec22-chen-qibin.pdf) ·
+[Automatically attacking software RE agents](https://arxiv.org/abs/2605.30667) ·
+[Does RE need a bigger model?](https://rea.tools/blog/reverse-engineering-models/)
+
+### Free courses and practice
+[OST2 x86-64 Assembly](https://p.ost2.fyi/courses/course-v1%3AOpenSecurityTraining2%2BArch1001_x86-64_Asm%2B2021_v1/about) ·
 [pwn.college RE](https://pwn.college/intro-re-pwn~5933fc84/reversing/) ·
 [pwn.college Reversing Hell](https://pwn.college/reversing-hell/) ·
 [Malware Unicorn RE101](https://malwareunicorn.org/workshops/re101) ·
-[OST2 x86-64 Assembly](https://p.ost2.fyi/courses/course-v1%3AOpenSecurityTraining2%2BArch1001_x86-64_Asm%2B2021_v1/about) ·
 [Nightmare](https://github.com/guyinatuxedo/nightmare) ·
 [RPISEC MBE](https://github.com/RPISEC/MBE) ·
-[OWASP MAS](https://mas.owasp.org)
+[OWASP MAS](https://mas.owasp.org) ·
+[Crackmes.one](https://crackmes.one)
 
-**Papers worth knowing (decompilation / agent reliability):**
-LLM4Decompile ([2403.05286](https://arxiv.org/abs/2403.05286)) ·
-SALT4Decompile ([2509.14646](https://arxiv.org/abs/2509.14646)) ·
-Decomperson ([USENIX Sec '22](https://usenix.org/conference/usenixsecurity22/presentation/burk)) ·
-DIRTY ([PDF](https://usenix.org/system/files/sec22-chen-qibin.pdf)) ·
-Does RE need a bigger model? ([REA blog](https://rea.tools/blog/reverse-engineering-models/))
+### The REA method in one line
+
+> APP → ONE FEATURE → REA EVIDENCE → CLEAN SPEC → LOCAL REBUILD → TEST AGAINST ORIGINAL
+
+No need to read everything in order. On this project the equivalent is:
+**one binary → one decision (e.g. "where are my capabilities stripped?") →
+evidence from the device → a written finding → a target page that the next
+person can test.**
 
 **Caveat on AI-assisted RE:** adversarial instructions can be embedded in the
 binary under study and steer an agent. Treat model output as a hypothesis and
