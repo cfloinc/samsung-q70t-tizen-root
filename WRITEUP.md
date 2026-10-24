@@ -1,8 +1,12 @@
 # Rooting and permanently debloating a Samsung QN65Q70TAFXZA
 
-**Result:** full `uid=0` root on a 2020 Samsung Q70T (Tizen 6.0), and a debloat
-that re-applies itself **as root, 0.74 seconds after every boot, with no USB
-stick and no computer involved.**
+**Result:** full `uid=0` root on a 2020 Samsung Q70T (Tizen 6.0, firmware
+**`T-NKMAKUC-2743.0`**, kernel built 2026-07-02), and a debloat that re-applies
+itself **as root ~0.73 s after every boot, with no USB stick and no computer
+involved.**
+
+**Scope:** every address, offset and behaviour here is specific to that firmware
+build. A matching model number is not compatibility — see §1 and §6.
 
 ```
 === tvroot boot entry uptime=0.74s uid=0 ctx=_

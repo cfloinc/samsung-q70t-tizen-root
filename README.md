@@ -6,9 +6,9 @@ address derivation, UEP, the capability model, the boot chain, and what actually
 survives a reboot.
 
 The first fully documented target is a **QN65Q70TAFXZA** (2020 Q70T, NIKEM,
-Tizen 6.0, kernel 4.1.10, ARMv7), which now roots itself and re-applies its
-debloat **as root 0.74 seconds after every boot**, with no USB stick and no
-computer attached:
+Tizen 6.0, kernel 4.1.10, ARMv7) on firmware **`T-NKMAKUC-2743.0`** (kernel built
+**2026-07-02**). It now roots itself and re-applies its debloat **as root ~0.73 s
+after every boot**, with no USB stick and no computer attached:
 
 ```
 === tvroot boot entry uptime=0.74s uid=0 ctx=_
@@ -21,6 +21,11 @@ computer attached:
       vdsystem-update-manager: inactive
       org.tizen.remotepc: deactivating
 ```
+
+> **Compatibility.** A matching model number is **not** compatibility. Every
+> address, block offset and several behaviours below were measured on
+> `T-NKMAKUC-2743.0` only; sibling builds of the same model or generation differ.
+> The writeup marks which values must be re-derived per firmware.
 
 > **Warning.** Hobby research, not an installer. It involves a kernel exploit,
 > raw block writes to a read-only filesystem and a patched boot script. A mistake
