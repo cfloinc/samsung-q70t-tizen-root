@@ -41,6 +41,25 @@ confirmed against a sibling Q90T build.
 | UEP verifier gate | `0xc01de028` |
 | UEP status global | `0xc069342c` |
 
+## Home routing on Tizen 6.0 (read-only baseline, 2026-10-24)
+
+The Home/start-screen schema differs from the Tizen 6.5 sets other write-ups target:
+
+| Key / API | Result here |
+|---|---|
+| `db/first_screen/type` | `com.samsung.tv.csfs` (Samsung Home) — the key that exists |
+| `db/appfw/home_appid` | **absent** (`No such file or directory`) |
+| `db/appfw/startup_appid` | absent |
+| `db/appfw/booting_appid_backup` | `org.tizen.tv-viewer` |
+| `db/menu/smart_hub/ontvsetting/auto_start` | `0` |
+| `aul_get_default_app` | **symbol absent** from `libaul.so.0` |
+| `app_operation_get_default_app` | present, but `rc=-1` from uid 5001 (denied) |
+| `vconftool` | present and usable as uid 901 via the SDB injection |
+
+Consequence: guides that remap Home by writing `db/appfw/home_appid` (Tizen 6.5) do
+not apply unchanged here; `db/first_screen/type` is the candidate key. Baseline and
+restore values are recorded in the private tree before any write.
+
 ## What did not work
 
 * archive-root: no dotnet host; launcher scrubs capabilities even with a forged
