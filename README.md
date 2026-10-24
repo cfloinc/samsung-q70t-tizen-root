@@ -135,6 +135,27 @@ Two ideas carry it:
 
 ---
 
+## Related work
+
+Projects that solve adjacent problems on Samsung Tizen TVs. None of these are
+part of the root chain described above; they are listed because they are useful
+and because their authors documented the platform honestly.
+
+| Project | What it is | Why it is relevant here |
+|---|---|---|
+| [NelsonEU/arn0-tv](https://github.com/NelsonEU/arn0-tv) | Launcher for a Q70B (Tizen 6.5), MIT | Documents a **no-root Home-button remap** at uid 901 through `libaul` + `libvconf` (`db/appfw/home_appid`, `main` app-control operation), with baseline/verify/restore |
+| [nthnclrk/CleanFrame](https://github.com/nthnclrk/CleanFrame) | Launcher for a 2024 The Frame | Original source of the Home-route investigation method arn0-tv builds on |
+| [simbasjungles/free-my-tv](https://github.com/simbasjungles/free-my-tv) | Cross-platform ad-free launcher | The launcher running on this TV |
+| [jss8649/quiet-tizen](https://github.com/jss8649/quiet-tizen) | Tizen 9 cleanup toolkit + native launcher | Reversible cleanup profiles and the same "subset survives restart" limitation |
+| [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) | Android/Google TV debloat + launcher | Confirms that package-disable flags can re-enable after firmware actions — the reason a boot-time re-apply exists here |
+
+On **this** TV the same libraries that arn0-tv uses are present
+(`libaul.so.0`, `libvconf.so.0`, `libcapi-appfw-app-operation-tv.so.0`,
+`libapp-context-manager-common.so`, `libbundle.so.0`), so the Home-button route
+is plausible on Tizen 6.0 as well — but it is **untested here**, and a bad value
+can leave Home pointing at an app that no longer exists. Query and save a
+baseline before writing anything.
+
 ## Legal and safety
 
 Research on hardware you own, for interoperability and to remove unwanted
