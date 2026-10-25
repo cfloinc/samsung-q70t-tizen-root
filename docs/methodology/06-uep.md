@@ -55,6 +55,26 @@ attempted on this set. Writing the status global to `0` allowed unsigned
 binaries on that set but was reported unstable. Neither is needed if you use the
 content-as-argument form.
 
+## UEP is path-based, not content-based (measured)
+
+A byte-identical copy of a **signed** system binary is still refused:
+
+```sh
+cp -a /bin/bash /opt/usr/share/tvroot/tvsh2   # same SHA-256, xattrs preserved
+chmod 4755 /opt/usr/share/tvroot/tvsh2
+/opt/usr/share/tvroot/tvsh2 -p -c 'id'
+# bash: .../tvsh2: Operation not permitted
+```
+
+Same bytes, same signature, SUID set — blocked. So the gate is not "is this file
+signed" but "is this **path** on the allowed list". Consequences:
+
+* copying a signed binary off the rootfs never yields an executable copy;
+* the SUID-root-on-`/opt` shortcut does not work here;
+* script content passed as an argument (`sh -c "$(cat …)"`) works because the
+  *signed* `/bin/sh` is what gets executed, and it never opens the file as a
+  script.
+
 ## Test it yourself
 
 `tools/uep-test.sh` writes a trivial unsigned script and reports which
