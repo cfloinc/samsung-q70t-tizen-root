@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "1+nDoNn2V4eMJGe2viSm/A95W0CLZKp4yq/FbdmWkSRFQEq4acWk349laD3/GkwaaxqY9sFLXR4/pNcWH7g9vA==",
+  "success": true,
+  "projectFilePath": "/Users/djcflo/Repos/misc/jailbreak-my-tv/publish/tools/tee-client/tee.csproj",
+  "expectedPackageFiles": [
+    "/Users/djcflo/.nuget/packages/microsoft.netcore.app.ref/3.0.0/microsoft.netcore.app.ref.3.0.0.nupkg.sha512",
+    "/Users/djcflo/.nuget/packages/microsoft.aspnetcore.app.ref/3.0.1/microsoft.aspnetcore.app.ref.3.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

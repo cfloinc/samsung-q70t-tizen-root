@@ -83,6 +83,7 @@ A target page states the firmware string next to any address table. Addresses ar
 |---|---|
 | `tools/foreshell.py` | Resilient SDB command runner (injection + capture + wedge recovery) |
 | `tools/tvshell_server.py` | Persistent beacon/root-shell server with keepalive |
+| `tools/swu-layout.py` | Validates an MSDU11 container before decryption (catches the 0x8C TOC-length shift) |
 | `tools/uep-test.sh` | Empirically determines which script invocations UEP allows |
 | `tools/capscan.sh` | Compact capability-bearing binary inventory |
 | `tools/tee-client/` | The TrustZone client that decrypts the firmware container |

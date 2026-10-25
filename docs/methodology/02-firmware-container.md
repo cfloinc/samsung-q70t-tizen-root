@@ -21,6 +21,19 @@ The TOC is **encrypted**. It decrypts to a header containing
 `Tizen Software Upgrade Tree Binary Format ver. 1.9` and a section table
 (offset, length, name, salt, CRC32).
 
+**Validate the layout before decrypting.** `tools/swu-layout.py` checks the
+marker, the salt offset, the 3984-byte TOC and — the useful part — that
+everything from `0x108C` to EOF is a multiple of 16. Starting at `0x1000` shifts
+the body by `0x8C` (140 = 12 mod 16), so the mistake is detectable without
+decrypting a byte:
+
+```
+$ tools/swu-layout.py upgrade.msd
+sections @0x108C: 1689748880 bytes of ciphertext (105609305.00 AES blocks)
+block-aligned   : YES  (body % 16 = 0)
+if sections started at 0x1000: ... (body % 16 = 12) -> INVALID, 0x8C shift
+```
+
 **Section start offset:** sections begin at `0x108C` (`0xFC` + 3984). If you
 assume a 3844-byte TOC instead, sections start at `0x1000` and every section
 decrypts to garbage — the ciphertext is shifted by exactly `0x8C`, so the key,

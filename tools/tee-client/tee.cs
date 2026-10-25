@@ -77,6 +77,12 @@ internal static class TeeProbe
 
         var pass = File.ReadAllBytes(PASS);
         var data = File.ReadAllBytes(input);
+        // Layout sanity: catching these early avoids the classic 0x8C-shifted
+        // ciphertext, which decrypts to garbage while every call returns rc=0.
+        if (!section && data.Length != 3984)
+            Log("WARN toc.bin is " + data.Length + " bytes; MSDU11 on this family is 3984");
+        if (section && (data.Length % 16) != 0)
+            Log("WARN section ciphertext is not AES-block-aligned (" + data.Length + " bytes)");
         Log("mode=" + (section ? "SECTION" : "TOC") + " input=" + data.Length
             + " salt=" + BitConverter.ToString(salt));
         if (data.Length % 16 != 0) { Log("input not AES aligned"); return; }
@@ -159,7 +165,7 @@ internal static class TeeProbe
         bool goodPad = pad >= 1 && pad <= 16;
         if (goodPad) for (int i = fin.Length - pad; i < fin.Length; i++) if (fin[i] != pad) { goodPad = false; break; }
         if (goodPad) output.Write(fin, 0, fin.Length - pad);
-        else { output.Write(fin, 0, fin.Length); Log("WARN bad PKCS7 pad=" + pad); }
+        else { output.Write(fin, 0, fin.Length); Log("WARN bad PKCS7 pad=" + pad + " (check toc length 3984 and section offset 0x108C)"); }
 
         byte[] all = output.ToArray();
         Log("plain total=" + all.Length + " pad=" + pad + " padOK=" + goodPad
