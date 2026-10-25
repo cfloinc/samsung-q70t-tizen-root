@@ -41,6 +41,7 @@ script *file loading* and refuses unsigned files. Always
 | Package deactivation: `org.tizen.ambientapp`, `com.samsung.tv.airplay-app`, `org.tizen.hbbtv` | `pkgcmd -D -t app -n <pkg> --uid 5001` (also re-applied by the boot hook) | ✅ | `pkgcmd -A -t app -n <pkg> --uid 5001` |
 | Marker `/opt/usr/share/systemd/system/pisa-service` | vendor `ConditionPathExists` guard (gates **pisa + adagent**) | ✅ | delete the file |
 | Marker `/opt/usr/share/systemd/system/slive-provider-daemon` | same pattern (TV Plus backend) | ✅ | delete the file |
+| **Root command agent** (`agent.sh`, started by the boot hook) | polls `/opt/usr/share/tvroot/cmd/in/*.sh`, runs them as root via `bash -c "$(cat …)"` | ✅ | `touch cmd/disabled` (immediate) or remove `agent.sh` + reboot |
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
 

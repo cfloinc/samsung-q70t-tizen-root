@@ -25,6 +25,36 @@ same byte length, and the hook runs as root on every boot.
 | `debloat.sh` | The `/run/systemd/system` masks + delayed `--no-block` stop pass + census. |
 | `rollback.sh` | Restores the vendor blocks from the backup. |
 
+## On-demand root: the command agent (`agent.sh`)
+
+The boot hook can also start a small **root command agent**, which turns "root at
+boot" into "root whenever you ask" without the USB stick.
+
+```sh
+# as sdk (uid 901), any time after boot:
+printf 'id\ncat /proc/self/attr/current\n' > /opt/usr/share/tvroot/cmd/in/job1.sh
+sleep 2
+cat /opt/usr/share/tvroot/cmd/out/job1.txt
+# uid=0(root) ...
+```
+
+How it works: `agent.sh` runs as root, polls `cmd/in/`, and executes each `*.sh`
+with `bash -c "$(cat file)"` (content, not exec — so UEP is not involved). Output
+goes to `cmd/out/<name>.txt`, then the job file is deleted.
+
+**This is a deliberate privilege boundary change.** `cmd/in` is `0777`, so
+anything at sdk level can execute commands as root. On a single-user TV on a
+trusted LAN that is usually the point; do not enable it on a shared or exposed
+network.
+
+Kill switch, without a reboot:
+
+```sh
+touch /opt/usr/share/tvroot/cmd/disabled     # agent idles until removed
+```
+
+Or remove `agent.sh` and reboot; the boot hook then logs "root agent not installed".
+
 ## The UEP rule (read this twice)
 
 Tizen's UEP gate hooks **script file loading**. Any of these is refused:
