@@ -55,6 +55,26 @@ attempted on this set. Writing the status global to `0` allowed unsigned
 binaries on that set but was reported unstable. Neither is needed if you use the
 content-as-argument form.
 
+## Executable mappings are path-gated as well (measured)
+
+The loader is not a way around it. Preloading the same library from different
+paths, with `/bin/true` as the (signed) host:
+
+| `LD_PRELOAD=` | Result |
+|---|---|
+| `/usr/lib/libvconf.so.0` (original, signed) | loads, no error |
+| a copy in `/opt` | `failed to map segment from shared object` |
+| a copy in `/tmp` (tmpfs) | same |
+| a copy in `/dev/shm` (tmpfs) | same |
+| a copy in `sdk_tools` | same |
+| an unsigned `.so` anywhere | same |
+
+None of those mounts is `noexec` (`/proc/mounts` shows plain `rw`), so the gate
+is the **path**, not the filesystem and not the signature. Practical
+consequence: `LD_PRELOAD`, `ld.so <file>`, and "copy a signed binary to writable
+storage" are all closed. Managed assemblies still work because CoreCLR maps them
+as **data**, not as executable segments.
+
 ## UEP is path-based, not content-based (measured)
 
 A byte-identical copy of a **signed** system binary is still refused:

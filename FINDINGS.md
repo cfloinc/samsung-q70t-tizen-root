@@ -1006,6 +1006,19 @@ These cost hours; they are all cheap to avoid.
 8. After a raw block write, `echo 3 > /proc/sys/vm/drop_caches` before trusting
    a filesystem-level hash (vdfs page cache).
 
+### 22.5a Executable mappings are path-gated (closes the loader bypass)
+
+Measured with `/bin/true` as the signed host:
+
+- `LD_PRELOAD=/usr/lib/libvconf.so.0` → loads
+- the same file copied to `/opt`, `/tmp`, `/dev/shm`, `sdk_tools` → `failed to
+  map segment from shared object`
+- an unsigned `.so` → same everywhere
+
+No mount is `noexec`, so the gate is the path. `LD_PRELOAD`, `ld.so <file>` and
+"signed binary copied to writable storage" are all closed. Managed code is
+unaffected because CoreCLR maps assemblies as data.
+
 ### 22.6 Open items / future work
 
 * **Cold-boot root without the stick.** The profile.d hook runs as root at
