@@ -25,6 +25,22 @@ that silence meant failure, or that a command had run when it had not.
 9. **The TV in standby looks identical to a hang**: ping loss, HTTP `000`, sdb
    unregistered. Wake-on-LAN can recover it; the remote cannot power it *off*.
 
+## `pkill -f` can kill the script that runs it
+
+A boot script is passed whole to `/bin/sh -c`, so **the entire script text is in
+its own command line**. `pkill -f AirPlay` then matches the script itself and
+SIGTERMs it mid-run — the symptom is a truncated log plus a background process
+that never started.
+
+Bracket one character so the pattern cannot match its own literal text:
+
+```sh
+for p in '[a]mbientapp' '[A]irPlay' '[h]bbtv_app'; do pkill -f "$p"; done
+```
+
+Same rule applies to any `pgrep`/`pkill -f` guard inside a script that mentions
+the pattern. Cost here: one reboot to discover, one to fix.
+
 ## A working pattern
 
 ```sh
