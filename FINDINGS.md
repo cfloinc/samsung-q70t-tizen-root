@@ -359,7 +359,7 @@ dump) is dead on this firmware.** The primitive that worked on the 2020 Q60T
 
 The MSDU11 container (upgrade.msd, 1.7 GB):
 - Header: magic "MSDU11", 9 sections, TOC at 0xEC (Salted__ + salt 9cdd28651baf3f28)
-- TOC ciphertext: 3844 bytes at offset 0xFC (AES-CBC, key from the NikeM release key)
+- TOC ciphertext: 3984 bytes at offset 0xFC (AES-CBC, key from the NikeM release key)
 - TOC decrypts to: RSA signature + section table with per-section salts/offsets
 
 Section table:

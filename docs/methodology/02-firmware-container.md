@@ -14,12 +14,19 @@ Public address tables are only valid for the exact firmware they came from.
 | `0x000` | MSDU11 header |
 | `0x0EC` | ASCII `Salted__` |
 | `0x0F4` | 8-byte salt — `9cdd28651baf3f28` on this image |
-| `0x0FC` | TOC ciphertext, 3844 bytes |
+| `0x0FC` | TOC ciphertext, **3984 bytes** (ends at `0x108C`) |
 | after TOC | 9 section blobs |
 
 The TOC is **encrypted**. It decrypts to a header containing
 `Tizen Software Upgrade Tree Binary Format ver. 1.9` and a section table
 (offset, length, name, salt, CRC32).
+
+**Section start offset:** sections begin at `0x108C` (`0xFC` + 3984). If you
+assume a 3844-byte TOC instead, sections start at `0x1000` and every section
+decrypts to garbage — the ciphertext is shifted by exactly `0x8C`, so the key,
+salt and TEEC calls are all fine while the pad byte and CRC are nonsense. This
+exact mistake cost a reader a day; the symptom is "TOC parses, every section
+fails".
 
 Sections are independently encrypted, each with its own salt. On this image:
 

@@ -147,6 +147,7 @@ and because their authors documented the platform honestly.
 | [nthnclrk/CleanFrame](https://github.com/nthnclrk/CleanFrame) | Launcher for a 2024 The Frame | Original source of the Home-route investigation method arn0-tv builds on |
 | [simbasjungles/free-my-tv](https://github.com/simbasjungles/free-my-tv) | Cross-platform ad-free launcher | The launcher running on this TV |
 | [jss8649/quiet-tizen](https://github.com/jss8649/quiet-tizen) | Tizen 9 cleanup toolkit + native launcher | Reversible cleanup profiles and the same "subset survives restart" limitation |
+| [gtalusan/samsung-q90t-tizen-root](https://github.com/gtalusan/samsung-q90t-tizen-root) | Q90T verification of the same firmware family | Independent section-by-section decryption evidence; caught a TOC-length error (3844 vs 3984 bytes) in this repo's docs |
 | [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) | Android/Google TV debloat + launcher | Confirms that package-disable flags can re-enable after firmware actions — the reason a boot-time re-apply exists here |
 
 On **this** TV the same libraries that arn0-tv uses are present

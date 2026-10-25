@@ -106,7 +106,7 @@ The firmware update file `T-NKMAKUC/image/upgrade.msd` (1.7 GB) is an MSDU11
 container:
 
 * TOC marker `Salted__` at `0xEC`, salt `9cdd28651baf3f28`,
-* TOC ciphertext at `0xFC` (3844 bytes), 9 sections,
+* TOC ciphertext at `0xFC` (3984 bytes), 9 sections,
 * every candidate public T-NKM key fails.
 
 **The TV decrypts it for us.** The SWU TrustZone trusted application accepts
