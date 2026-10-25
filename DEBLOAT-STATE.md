@@ -37,11 +37,19 @@ script *file loading* and refuses unsigned files. Always
 |---|---|---|---|
 | `bash_prompt_custom.sh` 776-byte patch | raw write, `/dev/mmcblk0p19` block **3150336** (byte 1612972032) | ✅ | `sh /opt/usr/share/tvroot/backup/rollback.sh` |
 | `boot.sh`, `debloat.sh` | files on writable `/opt` | ✅ | `rm /opt/usr/share/tvroot/{boot,debloat}.sh` |
-| 6 runtime masks: `acr.service`, `acr.path`, `contents-recognition-service.service`, `vision-data-recognition-service.service`, `vdsystem-update-manager.service`, `org.tizen.remotepc.service` | `/run/systemd/system/<unit>` → `/dev/null`, re-created by `debloat.sh` | ✅ via boot hook | remove from `debloat.sh`, or `rm` the symlinks for the current boot |
+| **13 runtime masks** (v2): `acr.service`, `acr.path`, `contents-recognition-service.service`, `vision-data-recognition-service.service`, `vdsystem-update-manager.service`, `org.tizen.remotepc.service`, **`background-update.service`**, **`background-update.path`**, **`bootmode-system-update.service`**, **`com.samsung.tv.airplay-service.service`**, **`com.samsung.tv.airplay-service-2.service`**, **`hbbtv-service.service`**, **`ambient-ua-agent.service`** | `/run/systemd/system/<unit>` → `/dev/null`, re-created by `debloat.sh` v2 | ✅ via boot hook | remove from `debloat.sh`, or `rm` the symlinks for the current boot |
+| Package deactivation: `org.tizen.ambientapp`, `com.samsung.tv.airplay-app`, `org.tizen.hbbtv` | `pkgcmd -D -t app -n <pkg> --uid 5001` (also re-applied by the boot hook) | ✅ | `pkgcmd -A -t app -n <pkg> --uid 5001` |
 | Marker `/opt/usr/share/systemd/system/pisa-service` | vendor `ConditionPathExists` guard (gates **pisa + adagent**) | ✅ | delete the file |
 | Marker `/opt/usr/share/systemd/system/slive-provider-daemon` | same pattern (TV Plus backend) | ✅ | delete the file |
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
+
+## Why the update services are masked (v2)
+
+`background-update.service` was **active**. An OTA rewrites `/etc`, which removes
+the 776-byte `profile.d` patch and therefore the boot hook. Masking the update
+units is persistence protection, not debloat. Update popups are unaffected by
+the mask; if they appear, use the notification settings route.
 
 ## Hashes
 
