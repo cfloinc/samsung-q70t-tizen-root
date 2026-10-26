@@ -23,7 +23,7 @@ up() { read u rest < /proc/uptime 2>/dev/null; echo "${u%%.*}s"; }
 
 mkdir -p /run/systemd/system 2>/dev/null
 for u in $UNITS; do ln -sf /dev/null "/run/systemd/system/$u" 2>/dev/null; done
-echo "--- v6 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
+echo "--- v7 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
 systemctl daemon-reload 2>/dev/null
 
 # --- on-demand root agent: start FIRST, never in the kill path ---------------
@@ -57,8 +57,57 @@ for p in '[a]mbientapp' '[A]irPlay' '[h]bbtv_app'; do pkill -f "$p" 2>/dev/null;
 
 for p in $PKGS; do pkgcmd -D -t app -n "$p" --uid 5001 >/dev/null 2>&1; done
 
+# --- UEP down via loopback + dropbear, with guards ---------------------------
+# Enable file: /opt/usr/share/tvroot/uep-enable   (remove to disable)
+# Try counter: decremented before firing; a panic loop exhausts it.
+# 60 s delay: every boot gives a window to disable before the fire.
+UEPIMG=/opt/usr/share/tvroot/uep2.img
+UEPEN=/opt/usr/share/tvroot/uep-enable
+if [ -f "$UEPIMG" ] && [ -f "$UEPEN" ] && [ ! -e /run/uep-fired ]; then
+  (
+    T=/opt/usr/share/tvroot/uep-tries
+    n=$(cat "$T" 2>/dev/null)
+    case "$n" in ''|*[!0-9]*) n=3 ;; esac
+    if [ "$n" -le 0 ]; then echo "--- uep: tries exhausted, skipped" ; exit 0; fi
+    echo $((n-1)) > "$T" 2>/dev/null; sync
+    echo "--- uep: firing in 60s (tries left $((n-1)))"
+    sleep 60
+    LP=$(losetup -f 2>/dev/null)
+    [ -n "$LP" ] || { echo "--- uep: no loop device"; exit 0; }
+    if ! losetup "$LP" "$UEPIMG" 2>/dev/null; then echo "--- uep: losetup failed"; exit 0; fi
+    mkdir -p /tmp/uep 2>/dev/null
+    if ! mount -t exfat "$LP" /tmp/uep 2>/dev/null; then
+      echo "--- uep: mount failed"; losetup -d "$LP" 2>/dev/null; exit 0
+    fi
+    : > /run/uep-fired
+    ( ls /tmp/uep >/dev/null 2>&1 & )
+    ( sleep 30; umount -l /tmp/uep 2>/dev/null; losetup -d "$LP" 2>/dev/null ) &
+    i=0
+    while [ $i -lt 30 ]; do
+      /opt/usr/share/tvroot/ldtest.static >/dev/null 2>&1 && break
+      sleep 1; i=$((i+1))
+    done
+    if /opt/usr/share/tvroot/ldtest.static >/dev/null 2>&1; then
+      echo "--- uep: DOWN after ${i}s; resetting tries"
+      echo 3 > "$T" 2>/dev/null; sync
+      D=/opt/etc/dropbear
+      if [ -x /opt/bin/dropbearmulti ] && [ -f "$D/dropbear_ed25519_host_key" ]; then
+        [ -f /run/dropbear.pid ] && kill "$(cat /run/dropbear.pid)" 2>/dev/null
+        sleep 1
+        nohup /opt/bin/dropbearmulti dropbear \
+          -r "$D/dropbear_ed25519_host_key" -r "$D/dropbear_rsa_host_key" \
+          -P /run/dropbear.pid -p 0.0.0.0:22 -s -g >/tmp/dropbear.log 2>&1 &
+        sleep 2
+        echo "--- dropbear pid=$(cat /run/dropbear.pid 2>/dev/null)"
+      fi
+    else
+      echo "--- uep: still up after ${i}s"
+    fi
+  ) >> /opt/usr/share/tvroot/uep-loop.log 2>&1 &
+fi
+
 sleep 25
-echo "--- v6 delayed pass done at uptime=$(up)" >> "$LOG"
+echo "--- v7 delayed pass done at uptime=$(up)" >> "$LOG"
 echo "--- census:" >> "$LOG"
 for u in acr contents-recognition-service vision-data-recognition-service \
 vdsystem-update-manager org.tizen.remotepc background-update \

@@ -95,6 +95,28 @@ signed" but "is this **path** on the allowed list". Consequences:
   *signed* `/bin/sh` is what gets executed, and it never opens the file as a
   script.
 
+## Taking UEP down from a loop device (verified on the Q70T)
+
+The three gate patches can be fired from a **file** instead of a USB stick:
+`losetup` the trigger image, `mount -t exfat`, then read the crafted directory.
+The readdir overflows the frame, runs the payload, and parks the thread — the
+hang is the success signal. See [stickless firing](../loopback-uep.md) for the
+full procedure.
+
+Verified here on `T-NKMAKUC-2743.0` with the `nikem-uep2` profile:
+
+* three stores of `mov r3,#0` at `0xc01de10c`, `0xc01de23c`, `0xc01de524`
+  (file offsets `0x1d614c`, `0x1d627c`, `0x1d6564` **including the 0x40 uImage
+  header**), then `v7_coherent_kern_range` over `[0xc01de10c, 0xc01de528)`;
+* after the fire, an unsigned static ARM binary executed as uid 901 — the
+  first time unsigned native code ran on this set;
+* with UEP down, dropbear (unsigned) serves **root SSH on :22**.
+
+Boot integration uses four guards: a 60 s delay, an enable file
+(`/opt/usr/share/tvroot/uep-enable`), a try counter decremented and synced
+before each fire (three failed boots and it stops trying), and the root agent
+started before the fire so a recovery channel exists.
+
 ## Test it yourself
 
 `tools/uep-test.sh` writes a trivial unsigned script and reports which

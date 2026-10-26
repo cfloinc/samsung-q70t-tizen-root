@@ -1034,6 +1034,22 @@ Without the shift they appear absent, which is exactly the false negative we hit
 first. This also confirms the Q70T kernel and the published 2743.0 image are the
 same build.
 
+### 22.5c UEP down on the Q70T via loopback (verified 2026-10-26)
+
+`nikem-uep2` (three gate stores, no entry trampoline) fired from
+`/opt/usr/share/tvroot/uep2.img` through `losetup` + `mount -t exfat` +
+`readdir`:
+
+- proof: an unsigned static ARM binary printed `LD-OK` as uid 901, from both
+  `/opt` and `/dev/shm`;
+- then dropbear (unsigned) started and served **root SSH on :22** with an
+  ed25519 host key in `/opt/etc/dropbear`;
+- no panic, no reboot; the patch is RAM-only and re-applied per firing.
+
+Two traps: the stage must be padded to keep `num_ext=67` (392 B stage → 544 B
+cave), and dropbear's `-R` writes host keys to the read-only `/etc/dropbear` —
+generate them in `/opt` and pass `-r`.
+
 ### 22.6 Open items / future work
 
 * **Cold-boot root without the stick.** The profile.d hook runs as root at
