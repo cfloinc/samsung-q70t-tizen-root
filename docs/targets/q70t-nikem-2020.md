@@ -47,7 +47,7 @@ The Home/start-screen schema differs from the Tizen 6.5 sets other write-ups tar
 
 | Key / API | Result here |
 |---|---|
-| `db/first_screen/type` | `com.samsung.tv.csfs` (Samsung Home) — the key that exists |
+| `db/first_screen/type` | **the Home-button target on this firmware** — `com.samsung.tv.csfs` by default. Setting it to a launcher app id makes Home open that launcher (verified from inside another app) |
 | `db/appfw/home_appid` | **absent** (`No such file or directory`) |
 | `db/appfw/startup_appid` | absent |
 | `db/appfw/booting_appid_backup` | `org.tizen.tv-viewer` |
@@ -57,7 +57,16 @@ The Home/start-screen schema differs from the Tizen 6.5 sets other write-ups tar
 | `vconftool` | present and usable as uid 901 via the SDB injection |
 
 Consequence: guides that remap Home by writing `db/appfw/home_appid` (Tizen 6.5) do
-not apply unchanged here; `db/first_screen/type` is the candidate key. Baseline and
+not apply unchanged here. On 6.0 the working write is:
+
+```sh
+vconftool set -f -t string db/first_screen/type <launcher-app-id>
+# rollback
+vconftool set -f -t string db/first_screen/type com.samsung.tv.csfs
+```
+
+Verified on this set with `FreeMyTVio.FreeMyTV`: pressing Home inside another app
+opens the launcher. Baseline and
 restore values are recorded in the private tree before any write.
 
 ## What did not work

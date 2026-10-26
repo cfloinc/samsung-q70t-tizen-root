@@ -43,7 +43,7 @@ script *file loading* and refuses unsigned files. Always
 | Marker `/opt/usr/share/systemd/system/slive-provider-daemon` | same pattern (TV Plus backend) | ✅ | delete the file |
 | **Root command agent** (`agent.sh`, started by the boot hook) | polls `/opt/usr/share/tvroot/cmd/in/*.sh`, runs them as root via `bash -c "$(cat …)"` | ✅ | `touch cmd/disabled` (immediate) or remove `agent.sh` + reboot |
 | **`/etc/hosts` sinkhole** (v6) | boot hook bind-mounts `/opt/usr/share/tvroot/hosts.block` over `/etc/hosts` — ad/ACR domains resolve to `0.0.0.0` even if DNS is bypassed | ✅ via boot hook | `umount /etc/hosts` (this boot) or remove the mount block from `debloat.sh` |
-| **Home/start-screen target** → `FreeMyTVio.FreeMyTV` | `vconftool set -f -t string db/first_screen/type FreeMyTVio.FreeMyTV` (vconf write, survives reboot) | ✅ | `vconftool set -f -t string db/first_screen/type com.samsung.tv.csfs` |
+| **Home/start-screen target** → `FreeMyTVio.FreeMyTV` | `vconftool set -f -t string db/first_screen/type FreeMyTVio.FreeMyTV` (vconf write) | ✅ **verified: Home opens the launcher from inside another app** | `vconftool set -f -t string db/first_screen/type com.samsung.tv.csfs` |
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
 
