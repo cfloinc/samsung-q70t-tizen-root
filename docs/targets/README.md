@@ -32,3 +32,4 @@ not portable across builds.
 | Target | Platform | Year | Root path | Persistence |
 |---|---|---|---|---|
 | [QN65Q70TAFXZA](q70t-nikem-2020.md) | `20_NIKEM_QTV` | 2020 | exFAT USB kernel LPE | raw-block `profile.d` patch |
+| [QN55Q90TAFXZC](q90t-nikem-2020.md) | `20_NIKEM_QTV` | 2020 | exFAT USB kernel LPE | raw-block `profile.d` patch (p18) |

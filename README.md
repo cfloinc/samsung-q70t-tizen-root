@@ -64,6 +64,8 @@ A target page states the firmware string next to any address table. Addresses ar
 | Document | Contents |
 |---|---|
 | **[WRITEUP.md](WRITEUP.md)** | The finished Q70T narrative: timeline, chain, verification, dead ends |
+| **[docs/uep-bypass.md](docs/uep-bypass.md)** | Kernel-level UEP analysis: the enforcement chain, three patch sites, module-signature requirements, and a working dropbear setup |
+| **[docs/loopback-uep.md](docs/loopback-uep.md)** | Firing the exploit from a loop device: UEP down at every boot, no USB stick present |
 | **[USB-EXPLOIT.md](USB-EXPLOIT.md)** | Full derivation: container, TEE, kernel, gadget selection, cave layout, trigger |
 | **[FINDINGS.md](FINDINGS.md)** | Chronological journal — every measurement, failure and correction |
 | **[LESSONS.md](LESSONS.md)** | 89 transferable rules of thumb |

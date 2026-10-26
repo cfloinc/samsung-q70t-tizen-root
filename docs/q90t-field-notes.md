@@ -1,6 +1,6 @@
 # Q90T field notes — the manual procedures and the scripting failures
 
-Companion to `docs/targets/q90t-nikem-2020.md`. These are the things that
+Companion to `targets/q90t-nikem-2020.md`. These are the things that
 worked by hand when the scripted path failed, on QN55Q90TAFXZC /
 T-NKMAKUC-REL-202505100505.
 

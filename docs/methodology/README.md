@@ -15,6 +15,8 @@ on a different model before trusting it.
 | 07 | [Capabilities and zones](07-capabilities-and-zones.md) | Where do capabilities come from, and where are they stripped? |
 | 08 | [Boot chain and persistence](08-boot-chain-and-persistence.md) | What runs as root at boot, and how do I hook it? |
 | 09 | [Debloat](09-debloat.md) | Which disabling mechanisms actually survive a reboot? |
+| — | [UEP bypass (kernel-level)](../uep-bypass.md) | What the gate actually checks, the three patch sites, and why modules are signed differently |
+| — | [Stickless UEP firing](../loopback-uep.md) | Firing the same exploit from a loop device, so UEP is down at every boot with no USB stick |
 | 10 | [Debug channels](10-debug-channels.md) | Why did my command silently not run, and how do I avoid it? |
 
 Target profiles live in [`../targets/`](../targets/). The finished Q70T case

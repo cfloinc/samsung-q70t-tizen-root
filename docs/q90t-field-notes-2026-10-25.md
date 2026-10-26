@@ -3,7 +3,7 @@
 App-booting eligibility, the standby/wake wedge, and CleanFrame-first, all
 reverse-engineered and verified on the living room QN55Q90TAFXZC
 (T-NKMAKUC-REL-202505100505, Tizen 5.5.0, armv7l). Companion doc:
-`docs/loopback-uep.md` (the stickless/persistent loopback UEP exploit,
+`loopback-uep.md` (the stickless/persistent loopback UEP exploit,
 TV-agnostic).
 
 ## RPAC is not what it looks like

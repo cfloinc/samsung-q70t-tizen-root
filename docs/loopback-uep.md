@@ -11,7 +11,7 @@ Field-verified 2026-10-25 on a QN55Q90TAFXZC (NikeM,
 T-NKMAKUC-REL-202505100505, Linux 4.1.10 armv7l, Tizen 5.5). The technique is
 TV-agnostic: the only per-platform component is the ROP/address set baked
 into the image, which the loopback layer does not touch (cf.
-`docs/uep-bypass.md` for the gate patch).
+`uep-bypass.md` for the gate patch).
 
 ## Why the stick had to go
 

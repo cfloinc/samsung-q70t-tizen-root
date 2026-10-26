@@ -22,7 +22,7 @@
   byte-identical to the NikeL references; trigger geometry transfers.
 * TEE decryption works with the shipped client unchanged; the TOC
   ciphertext is **3984 bytes at 0xFC** and sections start at `0x108C`
-  (see `docs/q90t-nkmakuc-2743.0-verification.md` for the nine-section
+  (see `../q90t-nkmakuc-2743.0-verification.md` for the nine-section
   map with per-section evidence).
 * Root shells: the kernel-stage beacon fires at USB mount (~20–40s) and
   dies ~60s later with the stage's process-group SIGHUP; `nohup bash -i
@@ -30,7 +30,7 @@
   re-fire the trigger — cold boots only.
 * Persistence surgery was done **by hand** (the shipped apply script
   wedged twice in D-state on this box; the manual block procedure is in
-  `docs/q90t-field-notes.md`). The vendor profile.d script is byte-
+  `../q90t-field-notes.md`). The vendor profile.d script is byte-
   identical to the Q70T's (md5 `e8a3d347…`).
 * The profile.d hook runs `boot.sh` by content at ~0.7s after power-on;
   its dial-back must nohup + retry (network is down at 0.7s) — see the
@@ -46,12 +46,14 @@ None beyond the published table; the installed 2700.6 kernel accepts the
 * CIFS/Remote-PC bounded root was chased first (the password field mangles
   spaces/`<`, the credential join inserts commas) — superseded by the USB
   path; see the field notes.
-* `nikem-uep` (UEP gate patch) does not fit num_ext=67: the patch adds 44
-  stage bytes and the cave blob exceeds the copy window. Deferred.
+* The first `nikem-uep` attempt (a 44-byte verifier-entry trampoline) does not
+  fit `num_ext=67` — the cave blob exceeds the copy window. Superseded by the
+  `nikem-uep2` profile, which patches three 4-byte gate loads instead; see
+  [uep-bypass.md](../uep-bypass.md).
 * Dropbear: UEP up, unsigned binaries never exec (silently killed).
 
 ## References
 
-* `docs/q90t-nkmakuc-2743.0-verification.md` — verified firmware map
-* `docs/q90t-field-notes.md` — campaign record and manual procedures
+* `../q90t-nkmakuc-2743.0-verification.md` — verified firmware map
+* `../q90t-field-notes.md` — campaign record and manual procedures
 * Upstream: [Luminger/samsung-tv-usb-root](https://github.com/Luminger/samsung-tv-usb-root)

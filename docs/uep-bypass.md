@@ -57,7 +57,7 @@ word matters).
 
 The three writes are applied from the kernel-stage payload of the exploit
 image at every cold boot (`samsung-tv-usb-root`, profile `nikem-uep2`) —
-from the USB stick, or stickless from a loop device (`docs/loopback-uep.md`)
+from the USB stick, or stickless from a loop device (`loopback-uep.md`)
 — followed by a `v7_coherent_kern_range` flush of `[0xc01de10c, 0xc01de528)`.
 
 The patch is RAM-only: it is re-applied on every firing. On boots where the
@@ -125,6 +125,6 @@ the kernel is a THUMB-2 build — ARM-mode modules are refused at relocation
   (`mount -t vfat /dev/sda2 /tmp/p2`); the ~60 s kernel-stage shell window
   is the storage timeout tearing down the hijacked mount's session.
 
-See also `docs/q90t-field-notes.md` for the manual procedures,
-`docs/loopback-uep.md` for the stickless persistent firing, and the
+See also `q90t-field-notes.md` for the manual procedures,
+`loopback-uep.md` for the stickless persistent firing, and the
 stick/tooling details in `samsung-tv-usb-root`.
