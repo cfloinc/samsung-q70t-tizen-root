@@ -55,14 +55,14 @@ Forcing the three loads to 0 makes every verification take the
 state — without ever writing the data word (so nothing that re-arms the
 word matters).
 
-The three writes are applied from the kernel-stage payload of the USB
-exploit stick at every cold boot (`samsung-tv-usb-root`, profile
-`nikem-uep2`), followed by a `v7_coherent_kern_range` flush of
-`[0xc01de10c, 0xc01de528)`.
+The three writes are applied from the kernel-stage payload of the exploit
+image at every cold boot (`samsung-tv-usb-root`, profile `nikem-uep2`) —
+from the USB stick, or stickless from a loop device (`docs/loopback-uep.md`)
+— followed by a `v7_coherent_kern_range` flush of `[0xc01de10c, 0xc01de528)`.
 
-The patch is RAM-only: it is re-applied on every stick boot. On stickless
-cold boots UEP returns (the command agent still works; it runs scripts by
-content through the signed `/bin/bash`, so UEP never sees an exec).
+The patch is RAM-only: it is re-applied on every firing. On boots where the
+image does not fire, UEP returns (the command agent still works; it runs
+scripts by content through the signed `/bin/bash`, so UEP never sees an exec).
 
 ## 3. Kernel provenance (why the offsets are trustworthy)
 
@@ -125,5 +125,6 @@ the kernel is a THUMB-2 build — ARM-mode modules are refused at relocation
   (`mount -t vfat /dev/sda2 /tmp/p2`); the ~60 s kernel-stage shell window
   is the storage timeout tearing down the hijacked mount's session.
 
-See also `docs/q90t-field-notes.md` for the manual procedures and the
+See also `docs/q90t-field-notes.md` for the manual procedures,
+`docs/loopback-uep.md` for the stickless persistent firing, and the
 stick/tooling details in `samsung-tv-usb-root`.
