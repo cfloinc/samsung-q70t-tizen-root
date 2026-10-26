@@ -27,6 +27,21 @@ file_offset = VA - 0xC0000000
 Check this before trusting it: take a known string from a known function, find
 it in the raw image, and confirm the offset matches `VA - 0xC0000000`.
 
+## Check for a u-boot header before computing offsets
+
+The decrypted "kernel section" may still be a **uImage**, not a raw kernel.
+Check the first four bytes for magic `27 05 19 56` (`0x27051956` little-endian).
+If it is present, the kernel payload starts at **`0x40`**, and the mapping is:
+
+```
+file_offset = 0x40 + (VA - 0xC0008000)
+```
+
+Miss that 64-byte header and every address you compute is off by 0x40 — enough
+to make a correct patch look wrong, or to patch the wrong instruction. Verified
+on this project's `T-NKMAKUC-2743.0` image: with the header accounted for, three
+known kernel sites matched byte-for-byte.
+
 ## Cross-check the CRC
 
 The TOC stores a CRC32 per section. Compute it on the decrypted bytes. A match

@@ -1019,6 +1019,21 @@ No mount is `noexec`, so the gate is the path. `LD_PRELOAD`, `ld.so <file>` and
 "signed binary copied to writable storage" are all closed. Managed code is
 unaffected because CoreCLR maps assemblies as data.
 
+### 22.5b The decrypted kernel is a uImage with a 64-byte header
+
+`uImage-2743.bin` starts with `27 05 19 56` (u-boot magic), not ARM code.
+Kernel file offset = **0x40 + (VA - 0xC0008000)**. With that shift, the three
+UEP gate sites published by gtalusan match exactly:
+
+```
+0x1d614c / 0x1d627c / 0x1d6564 : 00 30 93 e5   (ldr r3,[r3])
+s_uepStatus @0x68b46c          : 01 00 00 00
+```
+
+Without the shift they appear absent, which is exactly the false negative we hit
+first. This also confirms the Q70T kernel and the published 2743.0 image are the
+same build.
+
 ### 22.6 Open items / future work
 
 * **Cold-boot root without the stick.** The profile.d hook runs as root at
