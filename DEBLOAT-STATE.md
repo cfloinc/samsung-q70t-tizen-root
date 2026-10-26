@@ -5,7 +5,20 @@ USB stick and no computer.** Verified on a stick-free power cycle:
 `/run/.tvroot-hook` and `/run/.tvroot-debloat` both present, `debloat.log`
 written ~21 s after power-on, six `/run` masks, ACR trio inactive.
 
-Verified on **two consecutive stick-free boots**:
+Verified on a **cold boot, 2026-10-26** (`uptime=0 min`), with no manual steps:
+
+```
+v6 masks installed at uptime=0s (13 units)
+root agent started (pid 527)
+hosts sinkhole active
+masks 13 · background-update / airplay / hbbtv / ambient-ua-agent: inactive
+db/first_screen/type = FreeMyTVio.FreeMyTV
+
+post-reboot root job:
+uid=0(root) gid=0(root) context="_"
+```
+
+Earlier, verified on **two consecutive stick-free boots**:
 `=== tvroot boot entry uptime=0.74s uid=0 ctx=_` and
 `=== tvroot boot entry uptime=0.73s uid=0 ctx=_`, with `/opt/media` empty and no
 `/dev/sd*` present.
