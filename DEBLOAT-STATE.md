@@ -47,6 +47,30 @@ script *file loading* and refuses unsigned files. Always
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
 
+## Settings-level steps (no root — do these too)
+
+Root removes the *processes*; the consent switches remove the *permission*. Both
+matter, and these are reversible in the UI.
+
+On a 2019–2020 Samsung (this set's menu path), from
+[cleanyour.tv/not-android](https://cleanyour.tv/not-android#samsung), which cites
+the IMC 2024 study:
+
+**Settings → Support → Terms & Privacy → Privacy Choices**
+
+| Setting | Value |
+|---|---|
+| Viewing Information Services | **Off** (this is ACR — the big one) |
+| Interest-Based Advertisements | Off |
+| Customization Service | Off |
+| Improve personalized ads | Off |
+| Get news and special offers | Off |
+| Do not track | **On** |
+
+Also: **Reset PSID** (new ad id), Bixby **Voice Wake-Up → Off**, and the hardware
+**mic switch** if your panel has one. After a firmware update, check them again —
+owners report some switching back.
+
 ## Why the update services are masked (v2)
 
 `background-update.service` was **active**. An OTA rewrites `/etc`, which removes
