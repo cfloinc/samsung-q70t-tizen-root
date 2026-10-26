@@ -1050,6 +1050,14 @@ Two traps: the stage must be padded to keep `num_ext=67` (392 B stage → 544 B
 cave), and dropbear's `-R` writes host keys to the read-only `/etc/dropbear` —
 generate them in `/opt` and pass `-r`.
 
+### 22.5d `pkill -f` in a boot script kills the script (three times)
+
+The bracket trick (`[a]mbientapp`) is not enough: the regex matches any
+occurrence of the word, including package names elsewhere in the same script.
+Measured on the ambient/AirPlay pkill pass (script contains
+`org.tizen.ambientapp`), and twice on dropbear jobs. Rule: no `pkill -f` in a
+script passed whole to `sh -c`; use units, pidfiles, or exact PIDs.
+
 ### 22.6 Open items / future work
 
 * **Cold-boot root without the stick.** The profile.d hook runs as root at

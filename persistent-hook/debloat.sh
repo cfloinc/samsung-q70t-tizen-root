@@ -23,7 +23,7 @@ up() { read u rest < /proc/uptime 2>/dev/null; echo "${u%%.*}s"; }
 
 mkdir -p /run/systemd/system 2>/dev/null
 for u in $UNITS; do ln -sf /dev/null "/run/systemd/system/$u" 2>/dev/null; done
-echo "--- v7 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
+echo "--- v8 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
 systemctl daemon-reload 2>/dev/null
 
 # --- on-demand root agent: start FIRST, never in the kill path ---------------
@@ -52,8 +52,7 @@ if [ -f "$HOSTS" ]; then
   fi
 fi
 
-# bracketed patterns: the literal text in this script does not match the regex
-for p in '[a]mbientapp' '[A]irPlay' '[h]bbtv_app'; do pkill -f "$p" 2>/dev/null; done
+# (no pkill pass: any -f pattern also matches this script's own cmdline)
 
 for p in $PKGS; do pkgcmd -D -t app -n "$p" --uid 5001 >/dev/null 2>&1; done
 
@@ -107,7 +106,7 @@ if [ -f "$UEPIMG" ] && [ -f "$UEPEN" ] && [ ! -e /run/uep-fired ]; then
 fi
 
 sleep 25
-echo "--- v7 delayed pass done at uptime=$(up)" >> "$LOG"
+echo "--- v8 delayed pass done at uptime=$(up)" >> "$LOG"
 echo "--- census:" >> "$LOG"
 for u in acr contents-recognition-service vision-data-recognition-service \
 vdsystem-update-manager org.tizen.remotepc background-update \
