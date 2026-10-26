@@ -23,7 +23,7 @@ up() { read u rest < /proc/uptime 2>/dev/null; echo "${u%%.*}s"; }
 
 mkdir -p /run/systemd/system 2>/dev/null
 for u in $UNITS; do ln -sf /dev/null "/run/systemd/system/$u" 2>/dev/null; done
-echo "--- v4 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
+echo "--- v6 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
 systemctl daemon-reload 2>/dev/null
 
 # --- on-demand root agent: start FIRST, never in the kill path ---------------
@@ -32,7 +32,7 @@ if [ -f "$AG" ]; then
   if [ -e /run/tvroot-agent.pid ] && kill -0 "$(cat /run/tvroot-agent.pid)" 2>/dev/null; then
     echo "--- root agent already running (pid $(cat /run/tvroot-agent.pid))" >> "$LOG"
   else
-    setsid /bin/bash -c "$(cat "$AG")" </dev/null >/dev/null 2>&1 &
+    setsid /bin/bash -c 'while :; do /bin/bash -c "$(cat /opt/usr/share/tvroot/agent.sh)"; sleep 5; done' </dev/null >/dev/null 2>&1 &
     sleep 2
     echo "--- root agent started (pid $(cat /run/tvroot-agent.pid 2>/dev/null))" >> "$LOG"
   fi
@@ -42,13 +42,23 @@ fi
 
 for u in $STOPS; do systemctl --no-block stop "$u" 2>/dev/null; done
 
+# --- hosts sinkhole: ad/ACR domains resolve to 0.0.0.0 even if DNS is bypassed --
+HOSTS=/opt/usr/share/tvroot/hosts.block
+if [ -f "$HOSTS" ]; then
+  if mount --bind "$HOSTS" /etc/hosts 2>/dev/null; then
+    echo "--- hosts sinkhole active" >> "$LOG"
+  else
+    echo "--- hosts sinkhole FAILED" >> "$LOG"
+  fi
+fi
+
 # bracketed patterns: the literal text in this script does not match the regex
 for p in '[a]mbientapp' '[A]irPlay' '[h]bbtv_app'; do pkill -f "$p" 2>/dev/null; done
 
 for p in $PKGS; do pkgcmd -D -t app -n "$p" --uid 5001 >/dev/null 2>&1; done
 
 sleep 25
-echo "--- v4 delayed pass done at uptime=$(up)" >> "$LOG"
+echo "--- v6 delayed pass done at uptime=$(up)" >> "$LOG"
 echo "--- census:" >> "$LOG"
 for u in acr contents-recognition-service vision-data-recognition-service \
 vdsystem-update-manager org.tizen.remotepc background-update \

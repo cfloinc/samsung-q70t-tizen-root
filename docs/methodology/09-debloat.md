@@ -27,6 +27,19 @@ unit. Always:
 systemctl --no-block stop <unit>
 ```
 
+## A hosts-file backstop for DNS filtering
+
+`/etc` is read-only, but a bind mount over `/etc/hosts` works with root and
+survives only until reboot — so apply it from the boot hook:
+
+```sh
+mount --bind /opt/usr/share/tvroot/hosts.block /etc/hosts
+```
+
+`hosts.block` resolves ad/ACR domains to `0.0.0.0`, so the block still applies if
+an app bypasses your resolver. Keep the list short and conservative: a wrong
+entry can break account or app sign-in, and `/etc/hosts` is consulted before DNS.
+
 ## Measuring success
 
 Use **service state, mask count, and free memory** — not load average. Roughly

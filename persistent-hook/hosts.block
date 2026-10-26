@@ -1,0 +1,9 @@
+127.0.0.1 localhost
+::1 localhost ip6-localhost ip6-loopback
+0.0.0.0 samsungads.com
+0.0.0.0 samsungacr.com
+0.0.0.0 samsungadhub.com
+0.0.0.0 ads.samsung.com
+0.0.0.0 analytics.samsung.com
+0.0.0.0 samsungtvads.com
+0.0.0.0 acr.samsung.com
