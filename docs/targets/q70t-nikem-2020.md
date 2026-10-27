@@ -41,6 +41,64 @@ confirmed against a sibling Q90T build.
 | UEP verifier gate | `0xc01de028` |
 | UEP status global | `0xc069342c` |
 
+## Kernel module ABI (tested 2026-10-27)
+
+The stock `acm/acmd.ko` is the ABI oracle. Its `.gnu.linkonce.this_module`
+section is **`0x134` bytes**, with `init_module` at **`0xc0`** and
+`cleanup_module` at **`0x12c`**. The upstream
+[gtalusan recipe](https://github.com/gtalusan/samsung-tizen-kmod-recipe)
+builds **`0x150` / `0xc0` / `0x148`** against its generic Samsung 4.1.10
+headers; loading that here would be an ABI mismatch.
+
+Two changes make it exact:
+
+1. **`CONFIG_KALLSYMS` off.** This set has no `/proc/kallsyms`, so the
+   `struct module` has no `kallsyms`, `sect_attrs`, or `notes_attrs`
+   fields (−24 bytes).
+2. **`unwind[6]`, not `unwind[ARM_SEC_MAX]`.** The recipe's
+   `struct mod_arch_specific` has eight pointers (32 B); this set's
+   `struct module` has six (24 B), so the arch array is 8 bytes smaller
+   than the recipe's. Patch `arch/arm/include/asm/module.h`:
+
+   ```c
+   struct mod_arch_specific {
+           struct unwind_table *unwind[6];
+   };
+   ```
+
+After both, the section is **`0x134` bytes**, `init` at **`0xc0`**,
+`exit` at **`0x12c`** — the stock layout. The build still passes every
+loader wall: exact vermagic, `.core.plt`/`.init.plt` present, no
+`__aeabi_unwind_cpp_pr*`, relocations restricted to `{2, 43, 44}` (no
+Thumb `MOVW`/`MOVT` 47/48).
+
+Load test over root SSH (`context="_"`, UEP already down):
+
+```sh
+insmod research_kmem.ko enable=1 \
+  dump_vas=0xc01de10c:0xc01de23c:0xc01de524:0xc069342c
+```
+
+```
+research_kmem: dump@0xc01de10c rc=0: 00 30 a0 e3 00 00 53 e3 ...
+research_kmem: dump@0xc01de23c rc=0: 00 30 a0 e3 00 00 53 e3 ...
+research_kmem: dump@0xc01de524 rc=0: 00 30 a0 e3 00 00 53 e3 ...
+research_kmem: dump@0xc069342c rc=0: 01 00 00 00 00 01 00 00 ...
+```
+
+All three UEP gate instructions are the patched `mov r3, #0`
+(`00 30 a0 e3`), and `s_uepStatus` still reads `01 00 00 00`. `lsmod`
+showed `research_kmem 1801 0`.
+
+`rmmod research_kmem` also succeeded (`research_kmem mod uld` in dmesg),
+so this set **can** unload modules — the earlier "cannot unload" caveat
+does not apply to `T-NKMAKUC-2743.0`. Tizen's mdev leaves the
+`/dev/kmem` node behind after unload; it was removed manually. The module
+registers root-only (`0600`) `/dev/kmem` backed by arbitrary
+`probe_kernel_read`/`probe_kernel_write` once `enable=1` is passed; the
+test used init-time reads only and never opened the device. The known
+`copy_to_user` read crash was not exercised.
+
 ## Home routing on Tizen 6.0 (read-only baseline, 2026-10-24)
 
 The Home/start-screen schema differs from the Tizen 6.5 sets other write-ups target:

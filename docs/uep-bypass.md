@@ -140,7 +140,18 @@ The minimal, field-verified recipe is published separately:
 `research_kmem.c`, the 241 kernel headers from the Samsung 4.1.10 tree,
 `plt.S` for the `.core.plt`/`.init.plt` sections, `build.sh`, and a
 `verify.sh` that checks every loader wall. Verified on a Q90T
-(`T-NKMAKUC-REL-202505100505`, 2026-10-26); **not yet tested on the Q70T.**
+(`T-NKMAKUC-REL-202505100505`, 2026-10-26) and on a Q70T
+(`T-NKMAKUC-2743.0`, 2026-10-27).
+
+The Q70T needs two ABI changes, both measured against its stock
+`acm/acmd.ko`: `CONFIG_KALLSYMS` off (this set has no `/proc/kallsyms`)
+and `struct mod_arch_specific { struct unwind_table *unwind[6]; };`
+instead of `unwind[ARM_SEC_MAX]` (8 pointers here, 6 on the Q70T). After
+both, `__this_module` matches the stock section exactly — `0x134` bytes,
+`init` at `0xc0`, `exit` at `0x12c` — and the module loads and unloads.
+The init-time reads returned `00 30 a0 e3` at all three UEP gate sites
+and `01 00 00 00` at `s_uepStatus`. Details and the load transcript are
+in [the Q70T profile](../targets/q70t-nikem-2020.md#kernel-module-abi-tested-2026-10-27).
 
 ## 5. Operational state
 

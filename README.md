@@ -28,6 +28,12 @@ UEP gate taken down at ~60 s from a **loop device**, and then **dropbear serving
 root SSH on :22**. Guards: a 60 s delay, an enable file, and a try counter that
 stops after three failed boots.
 
+**Kernel modules, verified 2026-10-27:** gtalusan's build recipe loads and
+unloads on this Q70T after two ABI corrections (`KALLSYMS` off, `unwind[6]`).
+Its init-time reads returned the three patched UEP gates (`00 30 a0 e3`) and
+live kernel memory; load and unload both succeeded. See the
+[target profile](docs/targets/q70t-nikem-2020.md#kernel-module-abi-tested-2026-10-27).
+
 > **Compatibility.** A matching model number is **not** compatibility. Every
 > address, block offset and several behaviours below were measured on
 > `T-NKMAKUC-2743.0` only; sibling builds of the same model or generation differ.
@@ -70,7 +76,7 @@ A target page states the firmware string next to any address table. Addresses ar
 | Document | Contents |
 |---|---|
 | **[WRITEUP.md](WRITEUP.md)** | The finished Q70T narrative: timeline, chain, verification, dead ends |
-| **[docs/uep-bypass.md](docs/uep-bypass.md)** | Kernel-level UEP analysis: the enforcement chain, three patch sites, module-signature requirements, and a working dropbear setup |
+| **[docs/uep-bypass.md](docs/uep-bypass.md)** | Kernel-level UEP analysis: the enforcement chain, three patch sites, the ARM loader's section requirement, and a working dropbear setup |
 | **[docs/loopback-uep.md](docs/loopback-uep.md)** | Firing the exploit from a loop device: UEP down at every boot, no USB stick present |
 | **[USB-EXPLOIT.md](USB-EXPLOIT.md)** | Full derivation: container, TEE, kernel, gadget selection, cave layout, trigger |
 | **[FINDINGS.md](FINDINGS.md)** | Chronological journal — every measurement, failure and correction |
