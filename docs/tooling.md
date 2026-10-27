@@ -7,7 +7,7 @@
 | `arm-none-eabi-objdump` / `readelf` | binutils | ✅ | fast triage; symbol tables (the launcher is **not stripped**) |
 | `sdb` | Samsung debug bridge | ✅ | foothold, file push/pull, install |
 | `dlogutil` | device logger | ✅ | launcher/zone decisions (`Package ID`, `[PLATFORM]`, UEP messages) |
-| [REA](https://github.com/morluto/rea) | agentic RE workflows | ⚠️ optional | feature tracing, version diffing, reconstruction; not required for this repo's steps |
+| [REA](https://github.com/morluto/rea) | agentic RE workflows | ⚠️ optional, not installed here | feature tracing, version diffing, reconstruction; pin a version and sandbox it — an agent with shell access reading untrusted binaries is a prompt-injection risk |
 | [JADX](https://github.com/skylot/jadx) | APK → Java | ❌ | Android only; Tizen apps are `.wgt` (web) or `.tpk` (native/.NET) |
 | [Frida](https://github.com/frida/frida) | dynamic instrumentation | ❌ | no supported injector on retail Tizen; use the root shell + `dlogutil` |
 | [x64dbg](https://github.com/x64dbg/x64dbg) | Windows debugger | ❌ | Windows only |

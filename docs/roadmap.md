@@ -84,16 +84,25 @@ That last section is the most valuable one to the next person.
 
 ## External material
 
-### Start here (REA)
-[repository](https://github.com/morluto/rea) ·
+### Related reading (optional — not installed or endorsed here)
+
+[REA repository](https://github.com/morluto/rea) ·
 [website](https://rea.tools) ·
-[installation](https://github.com/morluto/rea/blob/main/docs/installation.md) ·
+[installation notes](https://github.com/morluto/rea/blob/main/docs/installation.md) ·
 [first investigation](https://rea.tools/first-investigation/) ·
 [guides](https://rea.tools/guides/) ·
 [guided MCP prompts](https://github.com/morluto/rea/blob/main/docs/mcp-prompts.md) ·
 [REA-Prompts](https://github.com/JoasASantos/REA-Prompts)
 
-Install: `npx rea-agents@latest setup`
+> **Caution.** REA is an agent tool that runs shell commands and reads
+> untrusted binaries. This repository does **not** install it, and nothing in
+> the methodology above depends on it. If you choose to use it: pin an exact
+> version instead of `@latest`, review the install script before running it,
+> and keep the agent sandboxed away from credentials. Public accusations about
+> the project's intent were checked and **not substantiated** (its npm package
+> publishes no install hooks, and it has ~868k downloads/month), but
+> prompt-injection-to-RCE is a real risk class for any tool of this kind —
+> the caution is about the design pattern, not about that project.
 
 ### Watch and follow along
 [Clone any software in minutes](https://youtube.com/watch?v=FnB9tHKBJXQ) ·
