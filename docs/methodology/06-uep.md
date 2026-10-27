@@ -112,6 +112,9 @@ Verified here on `T-NKMAKUC-2743.0` with the `nikem-uep2` profile:
   first time unsigned native code ran on this set;
 * with UEP down, dropbear (unsigned) serves **root SSH on :22**.
 
+Verified on a cold boot with no USB present: `uep: DOWN after 1s`, the
+try counter reset to 3, and dropbear listening on :22 with root key auth.
+
 Boot integration uses four guards: a 60 s delay, an enable file
 (`/opt/usr/share/tvroot/uep-enable`), a try counter decremented and synced
 before each fire (three failed boots and it stops trying), and the root agent

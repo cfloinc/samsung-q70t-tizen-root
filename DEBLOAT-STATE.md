@@ -57,6 +57,8 @@ script *file loading* and refuses unsigned files. Always
 | **Root command agent** (`agent.sh`, started by the boot hook) | polls `/opt/usr/share/tvroot/cmd/in/*.sh`, runs them as root via `bash -c "$(cat …)"` | ✅ | `touch cmd/disabled` (immediate) or remove `agent.sh` + reboot |
 | **`/etc/hosts` sinkhole** (v6) | boot hook bind-mounts `/opt/usr/share/tvroot/hosts.block` over `/etc/hosts` — ad/ACR domains resolve to `0.0.0.0` even if DNS is bypassed | ✅ via boot hook | `umount /etc/hosts` (this boot) or remove the mount block from `debloat.sh` |
 | **Home/start-screen target** → `FreeMyTVio.FreeMyTV` | `vconftool set -f -t string db/first_screen/type FreeMyTVio.FreeMyTV` (vconf write) | ✅ **verified: Home opens the launcher from inside another app** | `vconftool set -f -t string db/first_screen/type com.samsung.tv.csfs` |
+| **UEP down at boot** (loopback-fired `nikem-uep2`) | `losetup` + `mount -t exfat` + `readdir` on `/opt/usr/share/tvroot/uep2.img`, 60 s after boot | ✅ RAM-only, re-applied per boot | `rm /opt/usr/share/tvroot/uep-enable` (next boot); try counter stops after 3 failures |
+| **Root SSH on :22** (dropbear, unsigned) | started by the boot hook once UEP is down; ed25519 host key + `authorized_keys` in `/opt/etc/dropbear` | ✅ | `kill $(cat /run/dropbear.pid)`; remove the start block from `debloat.sh` |
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
 
