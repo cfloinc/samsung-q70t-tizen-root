@@ -50,6 +50,12 @@ three places, all inside the inlined verifier function at **`0xc01de028`**:
 | `0xc01de23c` | `0x1d623c` | `ldr r3, [r3]` | `mov r3, #0` |
 | `0xc01de524` | `0x1d6524` | `ldr r3, [r3]` | `mov r3, #0` |
 
+The file offsets are **payload-relative** (raw kernel): the decrypted
+`uImage` section starts with a 64-byte u-boot header (magic `27 05 19 56`),
+so add `0x40` when working from the section as-is — the gates sit at
+`0x1d614c`/`0x1d627c`/`0x1d6564` and `s_uepStatus` at `0x68b46c` there (see
+`methodology/04-kernel-recovery.md`).
+
 Forcing the three loads to 0 makes every verification take the
 `s_uepStatus == 0` branch permanently — bit-for-bit the line-1271 override
 state — without ever writing the data word (so nothing that re-arms the
