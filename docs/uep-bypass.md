@@ -89,26 +89,49 @@ Address space note that cost a boot loop early on: the kernel runs with
 ("R-space"). Ghidra imports at base `0xc0000000` ("G-space") — mixing the
 two puts a patch 0x8000 bytes off.
 
-## 4. Module loading is UEP-gated (and requires a UEP signature)
+## 4. Module loading: serial gates, and a Samsung required-section check
 
-`kernel/module.c` (Samsung patch, `CONFIG_INSMOD_FASTBOOT`) runs
-`sf_security_kernel_module_from_file()` on every module, which dispatches a
-`PROT_EXEC` mmap-style operation through UEP. Two consequences:
+`kernel/module.c` (Samsung patch, `CONFIG_INSMOD_FASTBOOT`) runs two hooks
+serially before the module bytes are read: the LSM hook
+(`security_kernel_module_from_file` — SMACK does not implement it, so it
+falls through) and `sf_security_kernel_module_from_file()`, which dispatches
+a `PROT_EXEC` mmap-style operation through UEP. With UEP down that verdict
+passes for everything; the wall we actually hit is later, in the loader:
 
-1. An *unsigned* `.ko` is refused even when UEP is down for executables —
-   the loader prints `%s: sections missing` and returns `-ENOEXEC`
-   ("Invalid module format").
-2. Every Samsung `.ko` on the TV carries a **UEP signature trailer**
-   appended after the ELF (`\n##UEP530…`, cf. `c_uep_lead_meta` in
-   `SfdUepHookHandlers.c`). Example: `acm/acmd.ko` (42698 bytes) has 534
-   trailing bytes starting `0a23235545503533 30` = `\n##UEP530`.
+* An *unsigned* `.ko` is refused even when UEP is down for executables —
+  the loader prints `%s: sections missing` and returns `-ENOEXEC`
+  ("Invalid module format").
+* Verified in the decrypted kernel image: the message sits in the ARM
+  loader's string cluster — a required-section check Samsung added to the
+  ARM module loader. The actual requirement is the **module-PLT
+  sections**: a stock `acm/acmd.ko` carries exactly one byte each of
+  `.core.plt` and `.init.plt` (`SHF_WRITE|SHF_ALLOC`) and nothing else
+  exotic.
+* **Retraction:** the earlier claim that Samsung `.ko` files carry a
+  `\n##UEP530…` signature trailer (and that this trailer is the gate) is
+  not corroborated by the kernel image — that magic appears nowhere in the
+  decrypted `uImage` — and was likely an AI hallucination in earlier
+  analysis. Disregard it.
 
-Hand-building a loadable third-party module is therefore not possible
-without Samsung's signing key. The TV's vermagic, for the record, is
-`0000000, release SMP preempt mod_unload ARMv7 p2v8 ` (the
-`DTV_KERNEL_VERSION` from `linux/vdlp_version.h`, not the UTS release), and
-the kernel is a THUMB-2 build — ARM-mode modules are refused at relocation
-("unsupported interworking call").
+Hand-building a loadable module is therefore possible — field-verified
+2026-10-26, module loaded and running with UEP down. The loader enforces,
+in order: (1) `__this_module` in `.gnu.linkonce.this_module`; (2) the
+vermagic below; (3) `.core.plt` and `.init.plt` present; (4) no
+`__aeabi_unwind_cpp_pr0/pr1` references (compile `-fno-unwind-tables`);
+(5) relocation types restricted to the stock set — ABS32, `R_ARM_CALL`,
+`R_ARM_JUMP24`, ARM `MOVW`/`MOVT` (43/44); Thumb `MOVW`/`MOVT` (47/48) is
+refused ("unknown relocation: 47"), so compile in **ARM mode, not
+Thumb**. (The old "ARM-mode modules refused at interworking" claim was a
+misdiagnosis.) With UEP down the module hook passes — the
+`s_uepStatus == 0` override does cover `sf_security_kernel_module_from_file`
+— and the module reads live kernel memory via `probe_kernel_read`; the file
+*read* path (`copy_to_user`) crashes the TV, so reads go through init-time
+`probe_kernel_read` + printk. The TV's
+vermagic, for the record, is `0000000, release SMP preempt mod_unload
+ARMv7 p2v8 ` (the `DTV_KERNEL_VERSION` from `linux/vdlp_version.h`, not the
+UTS release), and the kernel is a THUMB-2 build — modules must use the
+stock relocation set above (an ARM-mode build works, matching stock
+modules).
 
 ### 4a. Building a loadable module (field recipe, 2026-10-26)
 
