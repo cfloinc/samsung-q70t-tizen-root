@@ -104,6 +104,29 @@ without Samsung's signing key. The TV's vermagic, for the record, is
 the kernel is a THUMB-2 build — ARM-mode modules are refused at relocation
 ("unsupported interworking call").
 
+### 4a. Building a loadable module (field recipe, 2026-10-26)
+
+With UEP down the module hook passes: the `s_uepStatus == 0` override **does**
+cover `sf_security_kernel_module_from_file`. Five walls, in loader order, each
+cleared on hardware:
+
+| # | Wall | Fix |
+|---|---|---|
+| 1 | `version magic … should be …` | vermagic must be the TV's exact `0000000, release SMP preempt mod_unload ARMv7 p2v8` (`DTV_KERNEL_VERSION`, not the UTS release) |
+| 2 | `No module found in object` | `__this_module` must live in `.gnu.linkonce.this_module` |
+| 3 | `sections missing` | `.core.plt` **and** `.init.plt` must exist — one byte each, `SHF_WRITE\|SHF_ALLOC`. The `.pv_table` / `.alt.smp.init` names near the message in `.rodata` are a red herring |
+| 4 | `Unknown symbol in module` (`__aeabi_unwind_cpp_pr0/pr1`) | compile with `-fno-unwind-tables` |
+| 5 | `unknown relocation: 47` | compile in **ARM mode**, not Thumb. The loader accepts ABS32, `R_ARM_CALL`, `R_ARM_JUMP24` and ARM `MOVW`/`MOVT`; it refuses `R_ARM_THM_MOVW/MOVT_ABS_NC` (47/48). Stock `acmd.ko` carries 330 ARM calls and loads |
+
+Confirmed on hardware: the module loads and runs, and reading live kernel memory
+shows the three gate sites as `00 30 a0 e3` (`mov r3,#0`) while `s_uepStatus`
+still reads `01 00 00 00` — independent proof that the patch is instruction-level
+and the data word is never written.
+
+Caveat (theirs, not the loader's): a `/dev/kmem`-style `copy_to_user` path from
+the module crashes the TV, likely the SMACK uaccess wrapper; kernel reads go
+through `probe_kernel_read` + `printk` from `init` instead.
+
 ## 5. Operational state
 
 * **Dropbear**: `/opt/bin/dropbearmulti` (static ARM EABI5 soft-float) with
