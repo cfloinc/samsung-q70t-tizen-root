@@ -2,9 +2,9 @@
 
 ## What you get from the TEE
 
-The decrypted kernel section on this firmware is **not** a compressed zImage or
-a u-boot wrapped image. After decryption it is a **raw, uncompressed ARM Linux
-image**:
+The decrypted kernel section is a **u-boot uImage**: a 64-byte header (magic
+`27 05 19 56`) followed by a raw, uncompressed ARM Linux image payload (see
+"Check for a u-boot header" below). The banner sits inside the payload:
 
 ```
 Linux version 4.1.10 (abuild@B3203DRG)
@@ -17,15 +17,19 @@ If it does not match, you have the wrong section or the wrong firmware.
 
 ## Establishing the load base
 
-`PAGE_OFFSET` is `0xC0000000` on this platform, and **there is no KASLR**. That
-means a virtual address in the image maps to a file offset by:
+`PAGE_OFFSET` is `0xC0000000` on this platform, and **there is no KASLR**. The
+kernel runs with `TEXT_OFFSET 0x8000`, so inside the payload a virtual address
+maps to an offset by:
 
 ```
-file_offset = VA - 0xC0000000
+payload_offset = VA - 0xC0008000
 ```
+
+(Ghidra imports at base `0xC0000000`, "G-space" — mixing the two puts a patch
+`0x8000` bytes off.)
 
 Check this before trusting it: take a known string from a known function, find
-it in the raw image, and confirm the offset matches `VA - 0xC0000000`.
+it in the payload, and confirm the offset matches `VA - 0xC0008000`.
 
 ## Check for a u-boot header before computing offsets
 
