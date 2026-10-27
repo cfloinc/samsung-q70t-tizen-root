@@ -92,7 +92,12 @@ showed `research_kmem 1801 0`.
 
 `rmmod research_kmem` also succeeded (`research_kmem mod uld` in dmesg),
 so this set **can** unload modules — the earlier "cannot unload" caveat
-does not apply to `T-NKMAKUC-2743.0`. Tizen's mdev leaves the
+does not apply to `T-NKMAKUC-2743.0`. A Q90T
+(`T-NKMAKUC-REL-202505100505`) still reports `rmmod` failing. The first
+thing to check there is the same exit-offset issue: loading only proves
+`init` matches; `rmmod` reads `exit`. Compare the built module's
+`__this_module` size and `cleanup_module` relocation to the stock
+`acmd.ko` before concluding that unload is blocked. Tizen's mdev leaves the
 `/dev/kmem` node behind after unload; it was removed manually. The module
 registers root-only (`0600`) `/dev/kmem` backed by arbitrary
 `probe_kernel_read`/`probe_kernel_write` once `enable=1` is passed; the
