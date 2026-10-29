@@ -36,7 +36,10 @@ static Int s_uepStatus = 1;
 ```
 
 It is only ever cleared (the DUID-match branch at line 472 sets it to 0 and
-logs `[%s] UEP has been disabled`). No code path re-arms it to 1.
+logs `[%s] UEP has been disabled`). In this Q70T/Q90T 4.1.10 image, no code
+path was found that re-arms it to 1. A T6500 observer (txtsamu) reports a
+mid-session re-arm; that is a different build and the mechanism is
+unresolved, so do not generalise this to every Tizen kernel.
 
 ## 2. The bypass
 

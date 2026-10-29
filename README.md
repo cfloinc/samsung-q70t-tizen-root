@@ -23,7 +23,8 @@ after every boot**, with no USB stick and no computer attached:
 ```
 
 **Boot chain, verified on a cold boot with no USB stick and no host:** 13 runtime
-masks and the hosts sinkhole at `uptime=0s`, the root command agent at ~1 s, the
+masks (the `docs/assets/boot-proof.png` card is the earlier v1 6-mask run; v8
+applies 13) and the hosts sinkhole at `uptime=0s`, the root command agent at ~1 s, the
 UEP gate taken down at ~60 s from a **loop device**, and then **dropbear serving
 root SSH on :22**. Guards: a 60 s delay, an enable file, and a try counter that
 stops after three failed boots.

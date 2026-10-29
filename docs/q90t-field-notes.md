@@ -1,5 +1,9 @@
 # Q90T field notes — the manual procedures and the scripting failures
 
+> Companion: `q90t-field-notes-2026-10-25.md` covers app-booting,
+> standby/wake, and CleanFrame. This file is the manual-procedures record;
+> the two are not duplicates.
+
 Companion to `targets/q90t-nikem-2020.md`. These are the things that
 worked by hand when the scripted path failed, on QN55Q90TAFXZC /
 T-NKMAKUC-REL-202505100505.

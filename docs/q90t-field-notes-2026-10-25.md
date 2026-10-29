@@ -1,5 +1,9 @@
 # Q90T field notes — 2026-10-25
 
+> Companion: `q90t-field-notes.md` covers the manual block surgery and
+> scripting failures. This file covers app-booting/standby; the two are not
+> duplicates.
+
 App-booting eligibility, the standby/wake wedge, and CleanFrame-first, all
 reverse-engineered and verified on the living room QN55Q90TAFXZC
 (T-NKMAKUC-REL-202505100505, Tizen 5.5.0, armv7l). Companion doc:

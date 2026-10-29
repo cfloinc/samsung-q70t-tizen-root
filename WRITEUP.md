@@ -198,9 +198,11 @@ Measured, in order of durability:
 `systemctl stop` can hang forever on this TV when the job touches a D-state
 unit — **always use `systemctl --no-block stop`** in scripts.
 
-The result of the boot hook (measured): six runtime masks, `acr`,
+The result of the boot hook (measured in the v1 run): six runtime masks, `acr`,
 `contents-recognition-service`, `vision-data-recognition-service` and
-`vdsystem-update-manager` inactive; `org.tizen.remotepc` deactivating. Free RAM
+`vdsystem-update-manager` inactive; `org.tizen.remotepc` deactivating. (The v8
+hook later expanded this to 13 masks; the boot-proof card is the v1 six-mask
+run.) Free RAM
 went from ~213 MB to ~830 MB across the session; the load average, however, is
 **not** a useful performance signal on these sets — roughly ten processes sit
 in uninterruptible D-state waiting on absent tuner hardware, so idle load
@@ -269,7 +271,7 @@ UEP ("unsigned executable prevention") is built into the kernel; a reboot
 re-arms it, and on some sets it re-arms **within a session** after a few
 minutes. Root alone does not lift it.
 
-The decisive observation, from [txtsamu's NT72172 writeup](https://github.com/txtsamu/claude-research/blob/master/samsung-tv-uep-bypass-and-kants2-root.md):
+The decisive observation, from [txtsamu's consolidated T6500 writeup](https://github.com/txtsamu/claude-research/blob/master/samsung-tv-t6500-root-and-persistence.md) (UEP material in Chapter 6):
 
 > Tizen's shell hooks script loading, so the file path alone triggers the check.
 > The content-as-argument form does not, because nothing unsigned is ever

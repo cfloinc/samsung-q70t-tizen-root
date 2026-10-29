@@ -12,8 +12,8 @@ decrypted on the TV through the TEE client and checked for valid PKCS7 padding
 
 ## The one correction: TOC ciphertext length
 
-`methodology/02-firmware-container.md` says 3844 bytes at 0xFC. The real
-length is **3984 bytes** (0xF90, 16-aligned). Extracting 3840/3844 shifts every
+`methodology/02-firmware-container.md` originally said 3844 bytes at 0xFC;
+it now states the corrected **3984 bytes** (0xF90, 16-aligned). Extracting 3840/3844 shifts every
 section offset by 0x8C and produces deterministic garbage from correct keys —
 the output looks exactly like a wrong-key failure (no ASCII anywhere). Check
 the chain before suspecting the key: with the right base, the cumulative sizes

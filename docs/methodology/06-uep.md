@@ -9,9 +9,11 @@ fine:
 bash: /opt/hermes/root.sh: Operation not permitted      (EPERM)
 ```
 
-Diagnostics that are **red herrings**: the SUID bit, file mode, SMACK label
-(`_` and `System` both fail), `noexec`/`nosuid` mount flags, remounts and bind
-mounts. The decision is **signature-based**.
+Diagnostics that are **not** the deciding state: the SUID bit, file mode,
+SMACK label (`_` and `System` both fail). `noexec`/`nosuid` mount flags,
+remounts and bind mounts were not the differentiator in our tests, but the
+read-only bind-mount control is still queued. The decision is
+**signature-based, bound to the inode**.
 
 Run the script and the kernel tells you the real reason:
 
@@ -25,10 +27,20 @@ Run the script and the kernel tells you the real reason:
   `uevent` and `version`).
 * **Root does not lift it.** A `uid=0` process still cannot execute an unsigned
   file.
-* It re-arms on reboot, and has been observed re-arming **within a session**
-  after several minutes.
-* It hooks **script file loading** — `sh script.sh` and `sh -s < script.sh` both
-  trip it, because the shell opens the path as a script.
+* It re-arms on reboot. A T6500 observer (txtsamu, 2026-10-28) reports a
+  mid-session re-arm after several minutes; this has **not** been observed on
+  the Q70T, where the three gate stores stay patched and `s_uepStatus` remains
+  `01 00 00 00` across the session. Treat the mid-session re-arm as
+  build-specific and unresolved, not as a general property.
+* **Script-file loading is a user-space layer.** `/bin/sh`/`/bin/bash` carry
+  `verifyFile` and go through `/usr/lib/libkUEPUser.so`; the shell asks the
+  vendor library to vet a script *path* before opening it. That is why
+  `sh script.sh` and `sh -s < script.sh` trip it, while
+  `sh -c "$(cat script.sh)"` does not — the content form never opens the file
+  as a script. `execve` and `PROT_EXEC` mappings are a separate kernel hook
+  into the **same** UEP verifier (`SfdUepHandleVerificationResult`), not a
+  second gate. (T6500 strings confirmed by txtsamu; the Q70T live check is
+  queued — the `libkUEPUser` string is present in the p19 backup.)
 
 ## The bypass that works
 
@@ -86,8 +98,16 @@ chmod 4755 /opt/usr/share/tvroot/tvsh2
 # bash: .../tvsh2: Operation not permitted
 ```
 
-Same bytes, same signature, SUID set — blocked. So the gate is not "is this file
-signed" but "is this **path** on the allowed list". Consequences:
+Same bytes, SUID set — blocked. The copy has the original's bytes, but not
+its signature metadata: the verdict is bound to the **inode**, not to a path
+allow-list. A byte-identical copy that even keeps the original's SMACK label
+(`_`) is still refused; the read-only bind-mount control is queued, so treat
+the mount-flag question as open. This corrects
+an earlier "the path is the gate" reading, which overfit the copy experiment;
+the copy test above ran with UEP **up**, so it could not distinguish the
+kernel handler from a second mechanism. The UEP-down `LD_PRELOAD` control is
+the decisive one and is queued on the Q70T (TV offline at the time of
+writing). Consequences:
 
 * copying a signed binary off the rootfs never yields an executable copy;
 * the SUID-root-on-`/opt` shortcut does not work here;
