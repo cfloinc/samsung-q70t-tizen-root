@@ -42,10 +42,11 @@ How it works: `agent.sh` runs as root, polls `cmd/in/`, and executes each `*.sh`
 with `bash -c "$(cat file)"` (content, not exec — so UEP is not involved). Output
 goes to `cmd/out/<name>.txt`, then the job file is deleted.
 
-**This is a deliberate privilege boundary change.** `cmd/in` is `0777`, so
-anything at sdk level can execute commands as root. On a single-user TV on a
-trusted LAN that is usually the point; do not enable it on a shared or exposed
-network.
+**This is a deliberate privilege boundary change.** `cmd` and `cmd/in` are
+`1777` (sticky), and the agent only runs regular, non-symlink job files owned by
+the sdk UID (901 by default). Anything at sdk level can execute commands as
+root; files from other UIDs are ignored. On a single-user TV on a trusted LAN
+that is usually the point; do not enable it on a shared or exposed network.
 
 Kill switch, without a reboot:
 

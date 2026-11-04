@@ -168,8 +168,9 @@ in [the Q70T profile](../targets/q70t-nikem-2020.md#kernel-module-abi-tested-202
   profile.d hook, best-effort (fails silently when UEP is up on stickless
   boots).
 * **Command agent**: `agent.sh` (same as the q70t repo) polls
-  `/opt/usr/share/tvroot/cmd/in` (0777) as root and executes jobs by
-  content; output in `cmd/out`. Kill switch: `touch cmd/disabled`.
+  `/opt/usr/share/tvroot/cmd/in` (1777; job files must be regular, non-symlink
+  and owned by sdk=901) as root and executes jobs by content; output in
+  `cmd/out`. Kill switch: `touch cmd/disabled` (same owner check).
 * **Exfil**: `sdb push` to `/home/owner/share/tmp/sdk_tools` + the uid-901
   injection runner; big files stream over TCP (`cat f > /dev/tcp/…`).
 * Boot-chain quirks to keep in mind: script *file* loading is UEP-refused

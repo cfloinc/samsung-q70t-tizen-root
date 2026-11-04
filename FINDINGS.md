@@ -314,8 +314,9 @@ Chronological traps, all documented in [METHODOLOGY.md](METHODOLOGY.md):
 ## 12. THE USB ROOT PATH — proven on NIKEM
 
 The tiz0wn project (github.com/sebastianspicker/tiz0wn) rooted a Q90T
-(20_NIKEM_QTV, T-NKMDEUC-2743.0 — same platform as our Q70T) using
-Luminger's USB exFAT exploit adapted from Muse.M.
+(20_NIKEM_QTV; the early handover said T-NKMDEUC-2743.0, but a later
+system-image audit confirmed T-NKMDEUC-REL-202607031800 — same platform as our
+Q70T) using Luminger's USB exFAT exploit adapted from Muse.M.
 
 Key facts from the Q90T handover:
 - Platform values derived from the TV's kernel image (NOT from decrypted firmware)
@@ -490,7 +491,9 @@ Three external sources, all Tizen 6.0 / kernel 4.1.10 family:
 ### 17.1 metaljay (tiz0wn #1) — our NIKEM address table INDEPENDENTLY CONFIRMED
 
 Recovered from a QE75Q90TATXXU kernel, stamp `T-NKMDEUC-REL-202607031800`
-(US 2743.0 vs UK DEUC — sibling builds, Jul 2/3 2026):
+(the earlier "2743.0" label came from notes; a later system-image audit did not
+find that string — this is the DEUC sibling of our US T-NKMAKUC-2743.0,
+Jul 2/3 2026):
 
 | value | metaljay (Q90T) | ours (TEE-decrypted Q70T) |
 |---|---|---|
