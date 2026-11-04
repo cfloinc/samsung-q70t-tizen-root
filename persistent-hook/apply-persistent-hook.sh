@@ -20,6 +20,10 @@
 #      old bytes (wrong candidate), the candidate is restored from its
 #      backup and the next one is tried.
 #
+# Optional TVROOT_WINDOW_SHA pins the whole candidate window (all NBLOCKS
+# 512-byte blocks) to a precomputed hash before anything is written. The
+# observed window hash is also recorded in hook-location.sh for rollback.
+#
 # The patch keeps the file at exactly 776 bytes, so no filesystem metadata
 # (block count / allocation) changes and no neighbouring file can be touched.
 
@@ -79,6 +83,11 @@ for o in $hits; do
     dd if="$DEV" bs=$BLK skip=$BLKSTART count=$NBLOCKS of="$cand" 2>/dev/null || continue
     h=$(dd if="$cand" bs=1 skip=$BLKOFF count=$SIZE 2>/dev/null | sha256sum | sed 's/ .*$//')
     [ "$h" = "$ORIG_SHA" ] || { rm -f "$cand"; continue; }
+    CAND_SHA=$(h_of "$cand")
+    if [ -n "${TVROOT_WINDOW_SHA:-}" ] && [ "$CAND_SHA" != "$TVROOT_WINDOW_SHA" ]; then
+        echo "[cand] window hash $CAND_SHA != pinned $TVROOT_WINDOW_SHA"
+        rm -f "$cand"; continue
+    fi
     echo "[cand] block $BLKSTART (byte $s): matches the vendor original"
 
     # -- 2b. byte-exact backup BEFORE any write
@@ -161,6 +170,7 @@ NBLOCKS=$NBLOCKS
 BACKUP=$BKP
 ORIG_SHA=$ORIG_SHA
 NEW_SHA=$NEW_SHA
+WINDOW_SHA=$BKP_SHA
 LOC
 
 cat > "$BK/rollback.sh" <<'EOS'
@@ -172,6 +182,10 @@ FILE=${TVROOT_FILE:-/etc/profile.d/bash_prompt_custom.sh}
 fail() { echo "FAIL: $*"; exit 1; }
 [ -n "${TVROOT_TEST:-}" ] || [ "$(id -u 2>/dev/null)" = "0" ] || fail "not root"
 [ -f "$BACKUP" ] || fail "backup missing: $BACKUP"
+if [ -n "${WINDOW_SHA:-}" ]; then
+  now=$(sha256sum "$BACKUP" | sed 's/ .*$//')
+  [ "$now" = "$WINDOW_SHA" ] || fail "backup window hash $now != pinned $WINDOW_SHA"
+fi
 echo "restoring $NBLOCKS 512-byte block(s) at block $BLKSTART of $DEV"
 echo "  from $BACKUP (sha256 $(sha256sum "$BACKUP" | sed 's/ .*$//'))"
 dd if="$BACKUP" of="$DEV" bs=512 seek=$BLKSTART count=$NBLOCKS conv=notrunc 2>/dev/null || fail "write failed"

@@ -112,6 +112,9 @@ rm -f /opt/usr/share/tvroot/boot.sh /opt/usr/share/tvroot/debloat.sh
   metadata and no other file's blocks are touched.
 * The apply script refuses to write unless the bytes at the target offset hash
   to the vendor original, and it keeps a byte-exact backup.
+* Optional `TVROOT_WINDOW_SHA` pins the whole containing window (all touched
+  512-byte blocks) before any write; rollback re-checks the recorded window
+  hash.
 * Worst case is a broken prompt script; `rollback.sh` restores it exactly.
 * A firmware **update** rewrites `/etc` and removes the hook — the block offset
   must be re-derived afterwards.
