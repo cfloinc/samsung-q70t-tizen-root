@@ -40,7 +40,8 @@ cat /opt/usr/share/tvroot/cmd/out/job1.txt
 
 How it works: `agent.sh` runs as root, polls `cmd/in/`, and executes each `*.sh`
 with `bash -c "$(cat file)"` (content, not exec — so UEP is not involved). Output
-goes to `cmd/out/<name>.txt`, then the job file is deleted.
+goes to `cmd/out/<name>.txt`, then the job file is deleted. Each job is also
+archived under `cmd/archive/` and logged to `/opt/usr/share/tvroot/rootcmd.log`.
 
 **This is a deliberate privilege boundary change.** `cmd` and `cmd/in` are
 `1777` (sticky), and the agent only runs regular, non-symlink job files owned by
