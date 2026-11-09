@@ -22,7 +22,8 @@ same byte length, and the hook runs as root on every boot.
 | `build-patch.py` | Builds a **same-size** patched copy of *your own* vendor script, compacting only if needed. |
 | `apply-persistent-hook.sh` | Locates the file on the raw eMMC device, verifies it against the vendor hash, backs up the exact blocks, writes the patch, verifies the readback. |
 | `boot.sh` | Runs once per boot: calls `debloat.sh` **by content** (UEP-safe). |
-| `debloat.sh` | The `/run/systemd/system` masks + delayed `--no-block` stop pass + census. |
+| `debloat.sh` | The `/run/systemd/system` masks + delayed `--no-block` stop pass + census + the opt-in UEP fire (v9 two-phase try counter). |
+| `fire-uep.sh` | Manual, on-demand UEP-down + dropbear. Run it by content as root; reboot afterwards for standby. |
 | `rollback.sh` | Restores the vendor blocks from the backup. |
 
 ## On-demand root: the command agent (`agent.sh`)
@@ -75,6 +76,46 @@ sh -c "$(cat /opt/usr/share/tvroot/boot.sh)"
 
 Nothing unsigned is ever `execve`d, so there is nothing for UEP to check. Both
 links in this kit (profile.d → `boot.sh`, `boot.sh` → `debloat.sh`) use it.
+
+## UEP fire is opt-in (read this if you care about standby)
+
+The loopback UEP trigger parks a user task in D state. On the Q70T that task
+cannot be frozen, `kill -9` leaves the signal pending, and `losetup -d` returns
+0 without detaching the loop. The system standby freezer deadline is 20 s, so a
+standby transition can restart the TV. The default is therefore:
+
+* `/opt/usr/share/tvroot/uep-enable` **absent** (the deployed file is
+  `uep-enable.off`);
+* no boot-time UEP fire;
+* debloat masks, hosts sinkhole, and the root agent still run;
+* UEP stays up, so no dropbear and no unsigned binaries.
+
+When you need root SSH or unsigned binaries, run the manual helper **as root**
+by content:
+
+```sh
+sh -c "$(cat /opt/usr/share/tvroot/fire-uep.sh)"
+```
+
+The simplest way is a job through the root agent:
+
+```sh
+printf 'sh -c "$(cat /opt/usr/share/tvroot/fire-uep.sh)"\n' \
+  > /opt/usr/share/tvroot/cmd/in/fire-uep.sh
+sleep 3
+cat /opt/usr/share/tvroot/cmd/out/fire-uep.txt
+cat /opt/usr/share/tvroot/uep-loop.log
+```
+
+It fires immediately and starts dropbear. **Reboot afterwards** if you need
+standby: the parked readdir task is only cleared by a reboot. Re-enabling
+boot-time fire is a rename of `uep-enable.off` back to `uep-enable`, with the
+standby caveat. See [loopback-uep.md](../docs/loopback-uep.md#standby-and-freezer).
+
+The v9 try counter is two-phase: the attempt marker is written immediately
+before the fire, not before the 60 s wait. A previous attempt without a success
+marker consumes one try at the next boot; a power cycle during the 60 s wait
+does not.
 
 ## Procedure
 

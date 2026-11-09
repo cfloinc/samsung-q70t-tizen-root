@@ -1009,18 +1009,21 @@ These cost hours; they are all cheap to avoid.
 8. After a raw block write, `echo 3 > /proc/sys/vm/drop_caches` before trusting
    a filesystem-level hash (vdfs page cache).
 
-### 22.5a Executable mappings are path-gated (closes the loader bypass)
+### 22.5a Executable mappings are UEP-gated (read-only mounts accepted)
 
-Measured with `/bin/true` as the signed host:
+Measured with `/bin/true` as the signed host, UEP up:
 
 - `LD_PRELOAD=/usr/lib/libvconf.so.0` → loads
 - the same file copied to `/opt`, `/tmp`, `/dev/shm`, `sdk_tools` → `failed to
   map segment from shared object`
 - an unsigned `.so` → same everywhere
 
-No mount is `noexec`, so the gate is the path. `LD_PRELOAD`, `ld.so <file>` and
-"signed binary copied to writable storage" are all closed. Managed code is
-unaffected because CoreCLR maps assemblies as data.
+No mount is `noexec`, but the gate is not a path allow-list: it is UEP's
+inode-bound verdict. The controls in §26 refine this: with UEP down the same
+`/opt` copy loads; with UEP up a read-only bind mount of the copy loads. So
+`LD_PRELOAD`, `ld.so <file>` and "signed binary copied to writable storage" are
+closed on writable storage; a read-only bind mount is the root-only exception.
+Managed code is unaffected because CoreCLR maps assemblies as data.
 
 ### 22.5b The decrypted kernel is a uImage with a 64-byte header
 
@@ -1076,3 +1079,47 @@ script passed whole to `sh -c`; use units, pidfiles, or exact PIDs.
 * **Persistence review.** The 776-byte patch is in-place and survives firmware
   *reboots*, not firmware *updates*: a system update rewrites `/etc` and the
   hook is gone (and must be re-derived at the new block offset).
+
+---
+
+## 26. UEP controls, read-only mounts, and the parked-task standby limit (2026-11-09)
+
+**Read-only mount control — measured.** With UEP up, a copy of
+`/usr/lib/libvconf.so.0` in `/opt` is refused (`failed to map segment from
+shared object`). The same copy inside `mount --bind dir dir;
+mount -o remount,ro,bind dir` loads (`ld.so: calling init:
+.../ro-bind/libvconf-copy.so`). With UEP down (three gate stores
+`00 30 a0 e3`), the plain `/opt` copy loads. So the executable-mapping gate is
+UEP, and the verdict is not a simple path allow-list: mount writability
+matters; a read-only mount is accepted. The `libkUEPUser` layer is also
+confirmed live: `libkUEPUser.so` contains `verifyFile`, and both `/bin/bash`
+and `/bin/sh` contain `libkUEPUser` and `verifyFile`.
+
+**Parked readdir task — causes a standby failure.** The loopback UEP fire
+parks a user task (`ls /tmp/uep`) in D state. Measured on the Q70T:
+`schedule_timeout_uninterruptible` at `0xc05330e0`, fd 3 -> `/tmp/uep`;
+`kill -9` leaves `SigPnd=0x100` but the task never exits; `umount -l` succeeds,
+`losetup -d` returns 0 while `losetup -a` still lists the loop; a fresh freezer
+cgroup stays `FREEZING` for 25 s (the system deadline is 20 s). The same
+behavior was reported on a Q85R. This is a limitation of the loopback carrier,
+not the debloat.
+
+**Policy: UEP fire is opt-in.** The Q70T now leaves
+`/opt/usr/share/tvroot/uep-enable.off` in place, so the boot hook applies the
+masks, hosts sinkhole, and root agent but does not fire UEP. `fire-uep.sh`
+does it on demand; reboot afterwards for standby. A kernel-side fix
+(`PF_NOFREEZE` on the parked task, or a trigger that does not park a user
+task) is an open research item.
+
+**Try counter v9.** `debloat.sh` v9 writes an attempt marker immediately
+before the fire, not before the 60 s wait. A previous attempt without a
+success marker consumes one try at the next boot; a power cycle during the
+60 s wait no longer burns a try. The v8 counter had reached 0 on the Q70T
+after the recent power cycles, which left dropbear off; it was reset to 3.
+
+Comments and reports:
+* Q85R standby reproduction: <https://github.com/cfloinc/samsung-q70t-tizen-root/pull/1#issuecomment-6731333071>
+* Q70D/T-MSMAKUC report reply: <https://github.com/Luminger/samsung-tv-usb-root/issues/1#issuecomment-6731291788>
+* UEP controls: <https://github.com/txtsamu/claude-research/issues/29#issuecomment-6731363253>
+* Serif pointer: <https://github.com/chris-ritsen/samsung-tv-root/issues/2#issuecomment-6742509958>
+* Tizen 9 LAN-address review note: <https://github.com/andrearicci93/vetro/pull/123#issuecomment-6742510494>

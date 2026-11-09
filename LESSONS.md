@@ -87,3 +87,17 @@ contact with the hardware.
     "silent" failure was eventually explained by a dlog line, an empty error
     log, or a `/proc` read. Nothing on this TV fails without leaving *some*
     evidence — the trick is knowing which of the five output channels it uses.
+
+## UEP and persistence
+
+26. UEP's executable-mapping verdict is not a simple path allow-list. A
+    writable copy of a signed library is refused with UEP up; the same copy
+    at a read-only bind mount loads. UEP-down is the only general bypass.
+27. The loopback UEP trigger parks a user task in D state. It cannot be
+    frozen, `kill -9` leaves the signal pending, and `losetup -d` returns 0
+    without detaching the loop. That task blocks the system freezer and can
+    break standby. Fire UEP on demand, reboot after use, or fix it in the
+    kernel.
+28. A try counter must be written immediately before the fire, not before the
+    60 s delay. Otherwise a quick power cycle during the delay burns a try and
+    can silently disable root SSH.

@@ -18,6 +18,18 @@ post-reboot root job:
 uid=0(root) gid=0(root) context="_"
 ```
 
+**Source updated 2026-11-09.** `persistent-hook/debloat.sh` is now **v9**
+(two-phase UEP try counter). The last verified online boot ran v8; the v9
+on-device deployment is staged for the next online window. The policy below is
+already in force on the set (`uep-enable.off`).
+
+**Policy change 2026-11-09.** The loopback UEP fire now defaults to **off**
+(`uep-enable.off`). It parks a user task in D state that cannot be frozen and
+can break standby; see [loopback-uep.md](docs/loopback-uep.md#standby-and-freezer).
+The boot hook still applies the masks, starts the root agent, and mounts the
+hosts sinkhole. Use `fire-uep.sh` on demand for root SSH/unsigned binaries, and
+reboot afterwards for standby.
+
 Earlier, verified on **two consecutive stick-free boots**:
 `=== tvroot boot entry uptime=0.74s uid=0 ctx=_` and
 `=== tvroot boot entry uptime=0.73s uid=0 ctx=_`, with `/opt/media` empty and no
@@ -50,15 +62,16 @@ script *file loading* and refuses unsigned files. Always
 |---|---|---|---|
 | `bash_prompt_custom.sh` 776-byte patch | raw write, `/dev/mmcblk0p19` block **3150336** (byte 1612972032) | ✅ | `sh /opt/usr/share/tvroot/backup/rollback.sh` |
 | `boot.sh`, `debloat.sh` | files on writable `/opt` | ✅ | `rm /opt/usr/share/tvroot/{boot,debloat}.sh` |
-| **13 runtime masks** (v2): `acr.service`, `acr.path`, `contents-recognition-service.service`, `vision-data-recognition-service.service`, `vdsystem-update-manager.service`, `org.tizen.remotepc.service`, **`background-update.service`**, **`background-update.path`**, **`bootmode-system-update.service`**, **`com.samsung.tv.airplay-service.service`**, **`com.samsung.tv.airplay-service-2.service`**, **`hbbtv-service.service`**, **`ambient-ua-agent.service`** | `/run/systemd/system/<unit>` → `/dev/null`, re-created by `debloat.sh` v2 | ✅ via boot hook | remove from `debloat.sh`, or `rm` the symlinks for the current boot |
+| **13 runtime masks** (v9): `acr.service`, `acr.path`, `contents-recognition-service.service`, `vision-data-recognition-service.service`, `vdsystem-update-manager.service`, `org.tizen.remotepc.service`, **`background-update.service`**, **`background-update.path`**, **`bootmode-system-update.service`**, **`com.samsung.tv.airplay-service.service`**, **`com.samsung.tv.airplay-service-2.service`**, **`hbbtv-service.service`**, **`ambient-ua-agent.service`** | `/run/systemd/system/<unit>` → `/dev/null`, re-created by `debloat.sh` v9 | ✅ via boot hook | remove from `debloat.sh`, or `rm` the symlinks for the current boot |
 | Package deactivation: `org.tizen.ambientapp`, `com.samsung.tv.airplay-app`, `org.tizen.hbbtv` | `pkgcmd -D -t app -n <pkg> --uid 5001` (also re-applied by the boot hook) | ✅ | `pkgcmd -A -t app -n <pkg> --uid 5001` |
 | Marker `/opt/usr/share/systemd/system/pisa-service` | vendor `ConditionPathExists` guard (gates **pisa + adagent**) | ✅ | delete the file |
 | Marker `/opt/usr/share/systemd/system/slive-provider-daemon` | same pattern (TV Plus backend) | ✅ | delete the file |
 | **Root command agent** (`agent.sh`, started by the boot hook) | polls `/opt/usr/share/tvroot/cmd/in/*.sh` (1777; regular non-symlink files owned by sdk=901; `cmd` also 1777), runs them as root via `bash -c "$(cat …)"`; logs to `rootcmd.log`, archives in `cmd/archive` | ✅ | `touch cmd/disabled` (immediate) or remove `agent.sh` + reboot |
 | **`/etc/hosts` sinkhole** (v6) | boot hook bind-mounts `/opt/usr/share/tvroot/hosts.block` over `/etc/hosts` — ad/ACR domains resolve to `0.0.0.0` even if DNS is bypassed | ✅ via boot hook | `umount /etc/hosts` (this boot) or remove the mount block from `debloat.sh` |
 | **Home/start-screen target** → `FreeMyTVio.FreeMyTV` | `vconftool set -f -t string db/first_screen/type FreeMyTVio.FreeMyTV` (vconf write) | ✅ **verified: Home opens the launcher from inside another app** | `vconftool set -f -t string db/first_screen/type com.samsung.tv.csfs` |
-| **UEP down at boot** (loopback-fired `nikem-uep2`) | `losetup` + `mount -t exfat` + `readdir` on `/opt/usr/share/tvroot/uep2.img`, 60 s after boot | ✅ RAM-only, re-applied per boot | `rm /opt/usr/share/tvroot/uep-enable` (next boot); try counter stops after 3 failures |
-| **Root SSH on :22** (dropbear, unsigned) | started by the boot hook once UEP is down; ed25519 host key + `authorized_keys` in `/opt/etc/dropbear` | ✅ | `kill $(cat /run/dropbear.pid)`; remove the start block from `debloat.sh` |
+| **UEP down on demand** (loopback-fired `nikem-uep2`) | `losetup` + `mount -t exfat` + `readdir` on `/opt/usr/share/tvroot/uep2.img`; boot-time fire is opt-in and currently **off** (`uep-enable.off`) because the parked task breaks standby | RAM-only, per boot | run `fire-uep.sh` as root by content; reboot to clear the parked task |
+| **Root SSH on :22** (dropbear, unsigned) | started by `fire-uep.sh` (or by the boot hook when the fire is enabled); ed25519 host key + `authorized_keys` in `/opt/etc/dropbear` | per boot | `kill $(cat /run/dropbear.pid)`; reboot |
+| **Manual UEP helper** (`fire-uep.sh`) | on-demand loopback fire + dropbear; logs to `uep-loop.log`; leaves the parked task until reboot | ✅ file on `/opt` | remove the file; reboot |
 | TV DNS → AdGuard Home | TV network settings | ✅ | TV settings → DNS auto |
 | `Free My TV` launcher | signed web app | ✅ | uninstall |
 
@@ -110,7 +123,9 @@ filesystem-level `sha256sum` — vdfs caches the old page.
 
 ```sh
 sh -c "$(cat /opt/usr/share/tvroot/debloat.sh)"   # run the debloat now
+sh -c "$(cat /opt/usr/share/tvroot/fire-uep.sh)"  # manual UEP + dropbear
 cat /opt/usr/share/tvroot/debloat.log             # what the boot hook did
+cat /opt/usr/share/tvroot/uep-loop.log            # UEP fire history
 ls -l /run/systemd/system/ | grep dev/null        # current masks
 systemctl --no-block stop <unit>                  # plain stop can hang
 sh /opt/usr/share/tvroot/backup/rollback.sh       # restore vendor profile.d

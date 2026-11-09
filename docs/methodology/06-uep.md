@@ -10,10 +10,11 @@ bash: /opt/hermes/root.sh: Operation not permitted      (EPERM)
 ```
 
 Diagnostics that are **not** the deciding state: the SUID bit, file mode,
-SMACK label (`_` and `System` both fail). `noexec`/`nosuid` mount flags,
-remounts and bind mounts were not the differentiator in our tests, but the
-read-only bind-mount control is still queued. The decision is
-**signature-based, bound to the inode**.
+SMACK label (`_` and `System` both fail). The verdict is UEP's, and it is
+sensitive to the mount's writability: a writable copy is refused, while the
+same copy on a **read-only bind mount is accepted** (measured 2026-11-09; see
+"Executable mappings" below). The baseline decision is **signature-based,
+bound to the inode**; the read-only mount is the measured exception.
 
 Run the script and the kernel tells you the real reason:
 
@@ -39,8 +40,9 @@ Run the script and the kernel tells you the real reason:
   `sh -c "$(cat script.sh)"` does not — the content form never opens the file
   as a script. `execve` and `PROT_EXEC` mappings are a separate kernel hook
   into the **same** UEP verifier (`SfdUepHandleVerificationResult`), not a
-  second gate. (T6500 strings confirmed by txtsamu; the Q70T live check is
-  queued — the `libkUEPUser` string is present in the p19 backup.)
+  second gate. (T6500 strings confirmed by txtsamu; the Q70T live check is now
+  done: `libkUEPUser.so` contains `verifyFile`, and both `/bin/bash` and
+  `/bin/sh` contain `libkUEPUser` and `verifyFile`.)
 
 ## The bypass that works
 
@@ -67,29 +69,44 @@ attempted on this set. Writing the status global to `0` allowed unsigned
 binaries on that set but was reported unstable. Neither is needed if you use the
 content-as-argument form.
 
-## Executable mappings are path-gated as well (measured)
+## Executable mappings are UEP-gated; read-only mounts are accepted (measured)
 
-The loader is not a way around it. Preloading the same library from different
-paths, with `/bin/true` as the (signed) host:
+The loader is not a way around the check. Preloading the same library with
+`/bin/true` as the (signed) host:
 
-| `LD_PRELOAD=` | Result |
-|---|---|
-| `/usr/lib/libvconf.so.0` (original, signed) | loads, no error |
-| a copy in `/opt` | `failed to map segment from shared object` |
-| a copy in `/tmp` (tmpfs) | same |
-| a copy in `/dev/shm` (tmpfs) | same |
-| a copy in `sdk_tools` | same |
-| an unsigned `.so` anywhere | same |
+| `LD_PRELOAD=` | UEP | Result |
+|---|---|---|
+| `/usr/lib/libvconf.so.0` (original, signed) | up | loads, no error |
+| a copy in `/opt` | up | `failed to map segment from shared object` |
+| a copy in `/tmp`, `/dev/shm`, `sdk_tools` | up | same |
+| an unsigned `.so` anywhere | up | same |
+| a copy in `/opt` | **down** | loads |
+| a copy at a **read-only bind mount** | up | loads (`calling init: …/ro-bind/libvconf-copy.so`) |
 
-None of those mounts is `noexec` (`/proc/mounts` shows plain `rw`), so the gate
-is the **path**, not the filesystem and not the signature. Practical
-consequence: `LD_PRELOAD`, `ld.so <file>`, and "copy a signed binary to writable
-storage" are all closed. Managed assemblies still work because CoreCLR maps them
-as **data**, not as executable segments.
+With UEP **down** (the three gate stores forced to `00 30 a0 e3`), a copy that
+was refused with UEP up loads. So the executable-mapping gate is UEP itself;
+there is no second path-based mechanism to explain it.
 
-## UEP is path-based, not content-based (measured)
+The read-only control settles the mount question: a copy inside
+`mount --bind dir dir; mount -o remount,ro,bind dir` loads even with UEP **up**,
+while the same copy on the writable `/opt` is refused. The verdict is therefore
+**not a simple path allow-list**: mount writability matters, and a read-only
+mount is treated as acceptable. Practical consequences:
 
-A byte-identical copy of a **signed** system binary is still refused:
+* `LD_PRELOAD`, `ld.so <file>`, and "copy a signed binary to writable storage"
+  are closed while UEP is up;
+* a read-only bind mount is an exception, but it requires root to set up;
+* managed assemblies still work because CoreCLR maps them as **data**, not as
+  executable segments.
+
+Measured on the Q70T `T-NKMAKUC-2743.0`, 2026-11-09. Raw output and the
+independent correction are in
+[txtsamu/claude-research#29](https://github.com/txtsamu/claude-research/issues/29#issuecomment-6731363253).
+
+## UEP is inode-bound, with a read-only-mount exception (measured)
+
+A byte-identical copy of a **signed** system binary on writable storage is
+still refused:
 
 ```sh
 cp -a /bin/bash /opt/usr/share/tvroot/tvsh2   # same SHA-256, xattrs preserved
@@ -99,18 +116,17 @@ chmod 4755 /opt/usr/share/tvroot/tvsh2
 ```
 
 Same bytes, SUID set — blocked. The copy has the original's bytes, but not
-its signature metadata: the verdict is bound to the **inode**, not to a path
-allow-list. A byte-identical copy that even keeps the original's SMACK label
-(`_`) is still refused; the read-only bind-mount control is queued, so treat
-the mount-flag question as open. This corrects
-an earlier "the path is the gate" reading, which overfit the copy experiment;
-the copy test above ran with UEP **up**, so it could not distinguish the
-kernel handler from a second mechanism. The UEP-down `LD_PRELOAD` control is
-the decisive one and is queued on the Q70T (TV offline at the time of
-writing). Consequences:
+its signature metadata: the baseline verdict is bound to the **inode**, not to
+a path allow-list. A byte-identical copy that even keeps the original's SMACK
+label (`_`) is still refused. The read-only bind-mount control is the
+exception: the same copy loads from a read-only bind mount with UEP up. This
+corrects an earlier "the path is the gate" reading, which overfit the copy
+experiment. Consequences:
 
-* copying a signed binary off the rootfs never yields an executable copy;
+* copying a signed binary off the rootfs never yields an executable copy on
+  writable storage;
 * the SUID-root-on-`/opt` shortcut does not work here;
+* a read-only bind mount of the copy is accepted (root-only setup);
 * script content passed as an argument (`sh -c "$(cat …)"`) works because the
   *signed* `/bin/sh` is what gets executed, and it never opens the file as a
   script.
@@ -135,10 +151,22 @@ Verified here on `T-NKMAKUC-2743.0` with the `nikem-uep2` profile:
 Verified on a cold boot with no USB present: `uep: DOWN after 1s`, the
 try counter reset to 3, and dropbear listening on :22 with root key auth.
 
-Boot integration uses four guards: a 60 s delay, an enable file
-(`/opt/usr/share/tvroot/uep-enable`), a try counter decremented and synced
-before each fire (three failed boots and it stops trying), and the root agent
-started before the fire so a recovery channel exists.
+**Standby cost (measured 2026-11-09).** The parked readdir task is a user task
+in D state. It cannot be frozen (`PF_NOFREEZE` is kernel-only), so the system
+freezer waits past its 20 s deadline and the TV can restart instead of sleeping.
+`kill -9` leaves the signal pending; `umount -l` succeeds, but `losetup -d`
+returns 0 while the loop stays attached (the task holds the block-device
+reference). The Q70T boot hook therefore defaults to **UEP fire disabled**;
+use [`persistent-hook/fire-uep.sh`](../../persistent-hook/fire-uep.sh) on
+demand and reboot afterwards if standby must work. See
+[loopback-uep.md](../loopback-uep.md#standby-and-freezer).
+
+Boot integration uses five guards: a 60 s delay, an enable file
+(`/opt/usr/share/tvroot/uep-enable`), a two-phase try counter (the attempt
+marker is written immediately before the fire; a previous attempt without a
+success marker consumes one try on the next boot, so a power cycle during the
+60 s wait does not burn a try), the root agent started before the fire, and the
+manual-fire helper for on-demand use.
 
 ## Test it yourself
 

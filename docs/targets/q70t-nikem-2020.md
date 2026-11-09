@@ -132,6 +132,19 @@ Verified on this set with `FreeMyTVio.FreeMyTV`: pressing Home inside another ap
 opens the launcher. Baseline and
 restore values are recorded in the private tree before any write.
 
+## UEP policy and standby (2026-11-09)
+
+UEP-down at boot is verified, but the loopback trigger parks a user task in D
+state. The task cannot be frozen, `kill -9` leaves the signal pending, and
+`losetup -d` returns 0 without detaching the loop. The system standby freezer
+deadline is 20 s, so standby can restart the TV. The default on this set is now
+**manual UEP**: the boot hook leaves UEP up (`uep-enable.off`), starts the root
+agent, and applies the masks. Run
+[`persistent-hook/fire-uep.sh`](../../persistent-hook/fire-uep.sh) on demand
+for root SSH or unsigned binaries, and reboot afterwards for standby. The try
+counter is two-phase; see
+[08 — Boot chain](../methodology/08-boot-chain-and-persistence.md).
+
 ## What did not work
 
 * archive-root: no dotnet host; launcher scrubs capabilities even with a forged

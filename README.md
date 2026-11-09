@@ -23,11 +23,16 @@ after every boot**, with no USB stick and no computer attached:
 ```
 
 **Boot chain, verified on a cold boot with no USB stick and no host:** 13 runtime
-masks (the `docs/assets/boot-proof.png` card is the earlier v1 6-mask run; v8
-applies 13) and the hosts sinkhole at `uptime=0s`, the root command agent at ~1 s, the
-UEP gate taken down at ~60 s from a **loop device**, and then **dropbear serving
-root SSH on :22**. Guards: a 60 s delay, an enable file, and a try counter that
-stops after three failed boots.
+masks (the `docs/assets/boot-proof.png` card is the earlier v1 6-mask run; v9
+applies 13) and the hosts sinkhole at `uptime=0s`, and the root command agent at
+~1 s. The **UEP fire is opt-in** (v9): the default boot leaves UEP up because the
+loop device parks a user task in D state, which cannot be frozen and can break
+standby. Use [`persistent-hook/fire-uep.sh`](persistent-hook/fire-uep.sh) on
+demand for root SSH/unsigned binaries, and reboot afterwards for standby. Guards:
+a 60 s delay, an enable file, and a two-phase try counter (an attempt marker
+written immediately before the fire; a previous attempt without success consumes
+one try at the next boot). See
+[loopback-uep.md](docs/loopback-uep.md#standby-and-freezer).
 
 **Kernel modules, verified 2026-10-27:** gtalusan's build recipe loads and
 unloads on this Q70T after two ABI corrections (`KALLSYMS` off, `unwind[6]`).
@@ -121,7 +126,11 @@ SDB injection (Developer Mode)            uid 901 (sdk)
    └── boot: tizen-system-env.service → /etc/profile → profile.d
             └── UEP bypass: sh -c "$(cat boot.sh)"
                      └── sh -c "$(cat debloat.sh)"
-                              └── /run masks + stops at uptime 0.74 s
+                              ├── /run masks + stops at uptime 0.74 s
+                              └── root agent + hosts sinkhole
+                                         │
+                                         └── fire-uep.sh (manual, optional)
+                                                  └── loopback UEP + dropbear :22
 ```
 
 Two ideas carry it:

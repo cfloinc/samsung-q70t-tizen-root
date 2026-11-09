@@ -1,8 +1,11 @@
 #!/bin/sh
-# tvroot boot debloat v4 — v3 with two fixes:
+# tvroot boot debloat v9 — v8 plus a two-phase UEP attempt guard.
 #   * the agent starts BEFORE any kill pass (it must not be collateral)
 #   * pkill patterns are bracketed ([A]irPlay) so they cannot match this
 #     script's own command line, which is passed whole to /bin/sh -c.
+#   * the UEP fire is opt-in; the attempt marker is written immediately
+#     before the fire, so a quick power cycle during the 60 s wait does not
+#     burn a try. The parked readdir task still blocks standby (see docs).
 LOG=/opt/usr/share/tvroot/debloat.log
 
 UNITS="acr.service acr.path contents-recognition-service.service \
@@ -23,7 +26,7 @@ up() { read u rest < /proc/uptime 2>/dev/null; echo "${u%%.*}s"; }
 
 mkdir -p /run/systemd/system 2>/dev/null
 for u in $UNITS; do ln -sf /dev/null "/run/systemd/system/$u" 2>/dev/null; done
-echo "--- v8 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
+echo "--- v9 masks installed at uptime=$(up) ($(echo $UNITS | wc -w) units)" >> "$LOG"
 systemctl daemon-reload 2>/dev/null
 
 # --- on-demand root agent: start FIRST, never in the kill path ---------------
@@ -57,30 +60,55 @@ fi
 for p in $PKGS; do pkgcmd -D -t app -n "$p" --uid 5001 >/dev/null 2>&1; done
 
 # --- UEP down via loopback + dropbear, with guards ---------------------------
-# Enable file: /opt/usr/share/tvroot/uep-enable   (remove to disable)
-# Try counter: decremented before firing; a panic loop exhausts it.
+# Enable file: /opt/usr/share/tvroot/uep-enable   (missing = do not fire)
+# Try counter: a previous attempt that did not reach the success marker is
+# counted at the *next* boot. The attempt marker is written immediately before
+# the fire, not before the 60 s wait, so a quick power cycle during the wait
+# does not burn a try. A fire that crashes or hangs consumes one at next boot.
 # 60 s delay: every boot gives a window to disable before the fire.
 UEPIMG=/opt/usr/share/tvroot/uep2.img
 UEPEN=/opt/usr/share/tvroot/uep-enable
 if [ -f "$UEPIMG" ] && [ -f "$UEPEN" ] && [ ! -e /run/uep-fired ]; then
   (
     T=/opt/usr/share/tvroot/uep-tries
+    A=/opt/usr/share/tvroot/uep-attempt
     n=$(cat "$T" 2>/dev/null)
     case "$n" in ''|*[!0-9]*) n=3 ;; esac
-    if [ "$n" -le 0 ]; then echo "--- uep: tries exhausted, skipped" ; exit 0; fi
-    echo $((n-1)) > "$T" 2>/dev/null; sync
-    echo "--- uep: firing in 60s (tries left $((n-1)))"
+    if [ -f "$A" ]; then
+      n=$((n-1))
+      echo "$n" > "$T" 2>/dev/null
+      rm -f "$A" 2>/dev/null
+      sync
+      echo "--- uep: previous attempt left no success marker; tries now $n"
+    fi
+    if [ "$n" -le 0 ]; then echo "--- uep: tries exhausted, skipped"; exit 0; fi
+    echo "--- uep: firing in 60s (tries left $n)"
     sleep 60
+    ts=$(date +%s 2>/dev/null)
+    [ -n "$ts" ] || { read up rest < /proc/uptime 2>/dev/null; ts=${up%%.*}; }
+    echo "${ts:-unknown}" > "$A" 2>/dev/null
+    sync
     LP=$(losetup -f 2>/dev/null)
-    [ -n "$LP" ] || { echo "--- uep: no loop device"; exit 0; }
-    if ! losetup "$LP" "$UEPIMG" 2>/dev/null; then echo "--- uep: losetup failed"; exit 0; fi
+    [ -n "$LP" ] || { rm -f "$A" 2>/dev/null; echo "--- uep: no loop device"; exit 0; }
+    if ! losetup "$LP" "$UEPIMG" 2>/dev/null; then
+      rm -f "$A" 2>/dev/null
+      echo "--- uep: losetup failed"
+      exit 0
+    fi
     mkdir -p /tmp/uep 2>/dev/null
     if ! mount -t exfat "$LP" /tmp/uep 2>/dev/null; then
-      echo "--- uep: mount failed"; losetup -d "$LP" 2>/dev/null; exit 0
+      rm -f "$A" 2>/dev/null
+      echo "--- uep: mount failed"
+      losetup -d "$LP" 2>/dev/null
+      exit 0
     fi
     : > /run/uep-fired
     ( ls /tmp/uep >/dev/null 2>&1 & )
-    ( sleep 30; umount -l /tmp/uep 2>/dev/null; losetup -d "$LP" 2>/dev/null ) &
+    # Detach the mount namespace entry only. The parked readdir task keeps the
+    # loop device and the exFAT superblock referenced; losetup -d returns 0
+    # but does not detach. That task also cannot be frozen, so standby may
+    # fail. See docs/loopback-uep.md ("Standby and freezer").
+    ( sleep 30; umount -l /tmp/uep 2>/dev/null ) &
     i=0
     while [ $i -lt 30 ]; do
       /opt/usr/share/tvroot/ldtest.static >/dev/null 2>&1 && break
@@ -88,7 +116,9 @@ if [ -f "$UEPIMG" ] && [ -f "$UEPEN" ] && [ ! -e /run/uep-fired ]; then
     done
     if /opt/usr/share/tvroot/ldtest.static >/dev/null 2>&1; then
       echo "--- uep: DOWN after ${i}s; resetting tries"
-      echo 3 > "$T" 2>/dev/null; sync
+      echo 3 > "$T" 2>/dev/null
+      rm -f "$A" 2>/dev/null
+      sync
       D=/opt/etc/dropbear
       if [ -x /opt/bin/dropbearmulti ] && [ -f "$D/dropbear_ed25519_host_key" ]; then
         [ -f /run/dropbear.pid ] && kill "$(cat /run/dropbear.pid)" 2>/dev/null
@@ -100,7 +130,7 @@ if [ -f "$UEPIMG" ] && [ -f "$UEPEN" ] && [ ! -e /run/uep-fired ]; then
         echo "--- dropbear pid=$(cat /run/dropbear.pid 2>/dev/null)"
       fi
     else
-      echo "--- uep: still up after ${i}s"
+      echo "--- uep: still up after ${i}s (attempt marker kept for next boot)"
     fi
   ) >> /opt/usr/share/tvroot/uep-loop.log 2>&1 &
 fi

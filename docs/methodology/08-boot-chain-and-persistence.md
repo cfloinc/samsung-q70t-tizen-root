@@ -54,6 +54,24 @@ Both links (profile.d → `boot.sh`, `boot.sh` → `debloat.sh`) do this. Sourci
 (`. file`) also worked in testing, but content-as-argument is the documented,
 reliable form.
 
+## The UEP fire is opt-in (2026-11-09)
+
+The loopback UEP trigger parks a user task in D state. On the Q70T that task
+survives in `schedule_timeout_uninterruptible`, cannot be frozen, and makes
+`losetup -d` return 0 without detaching the loop. The system standby freezer
+deadline is 20 s; a transition can therefore fail and restart the TV. The
+default boot hook now leaves UEP up: it still applies the debloat masks,
+starts the root agent, and mounts the hosts sinkhole. Use
+[`persistent-hook/fire-uep.sh`](../../persistent-hook/fire-uep.sh) when root
+SSH or unsigned binaries are needed, and reboot afterwards to clear the parked
+task. Re-enabling boot-time fire is a rename of `uep-enable.off` back to
+`uep-enable`, with the standby caveat. See
+[loopback-uep.md](../loopback-uep.md#standby-and-freezer).
+
+The try counter is two-phase: the attempt marker is written immediately before
+the fire, not before the 60 s wait; a previous attempt without a success marker
+consumes one try at the next boot.
+
 ## After a raw write
 
 ```
