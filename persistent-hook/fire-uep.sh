@@ -54,7 +54,11 @@ D=/opt/etc/dropbear
         -r "$D/dropbear_ed25519_host_key" -r "$D/dropbear_rsa_host_key" \
         -P /run/dropbear.pid -p 0.0.0.0:22 -s -g >/tmp/dropbear.log 2>&1 &
       sleep 2
-      echo "--- dropbear pid=$(cat /run/dropbear.pid 2>/dev/null)"
+      if [ -f /run/dropbear.pid ] && kill -0 "$(cat /run/dropbear.pid)" 2>/dev/null; then
+        echo "--- dropbear pid=$(cat /run/dropbear.pid 2>/dev/null)"
+      else
+        echo "--- dropbear failed to start (UEP still up?)"
+      fi
     fi
   fi
   echo "=== manual fire done; reboot to clear the parked readdir task"
