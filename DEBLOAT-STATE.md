@@ -18,10 +18,11 @@ post-reboot root job:
 uid=0(root) gid=0(root) context="_"
 ```
 
-**Source updated 2026-11-09.** `persistent-hook/debloat.sh` is now **v9**
-(two-phase UEP try counter). The last verified online boot ran v8; the v9
-on-device deployment is staged for the next online window. The policy below is
-already in force on the set (`uep-enable.off`).
+**Deployed 2026-11-09.** `persistent-hook/debloat.sh` v9 (two-phase UEP try
+counter) and `fire-uep.sh` were installed on the set and hash-verified. The
+last verified online boot ran v8; v9 boot verification is pending (the deploy
+reboot left the TV in standby). The policy below is in force
+(`uep-enable.off`).
 
 **Policy change 2026-11-09.** The loopback UEP fire now defaults to **off**
 (`uep-enable.off`). It parks a user task in D state that cannot be frozen and

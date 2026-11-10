@@ -1122,6 +1122,8 @@ before the fire, not before the 60 s wait. A previous attempt without a
 success marker consumes one try at the next boot; a power cycle during the
 60 s wait no longer burns a try. The v8 counter had reached 0 on the Q70T
 after the recent power cycles, which left dropbear off; it was reset to 3.
+v9 and `fire-uep.sh` were deployed and hash-verified on 2026-11-09; the deploy
+reboot left the TV in standby, so v9 boot verification is pending.
 
 Comments and reports:
 * Q85R standby reproduction: <https://github.com/cfloinc/samsung-q70t-tizen-root/pull/1#issuecomment-6731333071>
@@ -1129,3 +1131,4 @@ Comments and reports:
 * UEP controls: <https://github.com/txtsamu/claude-research/issues/29#issuecomment-6731363253>
 * Serif pointer: <https://github.com/chris-ritsen/samsung-tv-root/issues/2#issuecomment-6742509958>
 * Tizen 9 LAN-address review note: <https://github.com/andrearicci93/vetro/pull/123#issuecomment-6742510494>
+* Lolinho77 Q85R clean-return/payload reply: <https://github.com/cfloinc/samsung-q70t-tizen-root/pull/1#issuecomment-6755506836>
