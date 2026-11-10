@@ -96,8 +96,9 @@ contact with the hardware.
 27. The loopback UEP trigger parks a user task in D state. It cannot be
     frozen, `kill -9` leaves the signal pending, and `losetup -d` returns 0
     without detaching the loop. That task blocks the system freezer and can
-    break standby. Fire UEP on demand, reboot after use, or fix it in the
-    kernel.
+    break standby. A clean-return stage was tried on a Q85R and boot-looped;
+    the park is deliberate. Fire UEP on demand, reboot after use, or fix it in
+    the kernel.
 28. A try counter must be written immediately before the fire, not before the
     60 s delay. Otherwise a quick power cycle during the delay burns a try and
     can silently disable root SSH.

@@ -1100,16 +1100,22 @@ parks a user task (`ls /tmp/uep`) in D state. Measured on the Q70T:
 `schedule_timeout_uninterruptible` at `0xc05330e0`, fd 3 -> `/tmp/uep`;
 `kill -9` leaves `SigPnd=0x100` but the task never exits; `umount -l` succeeds,
 `losetup -d` returns 0 while `losetup -a` still lists the loop; a fresh freezer
-cgroup stays `FREEZING` for 25 s (the system deadline is 20 s). The same
-behavior was reported on a Q85R. This is a limitation of the loopback carrier,
-not the debloat.
+cgroup stays `FREEZING` for 25 s (the system deadline is 20 s). This is a
+limitation of the loopback carrier, not the debloat.
+
+**Q85R confirmation (2026-11-09).** `QE65Q85RATXXU` / `T-MSMDEUC-1500.9`
+reproduces the same failure with both the USB stick and a loop image. A
+clean-return stage (restore the stack and return instead of parking) was
+unstable and boot-looped when made persistent; no verified clean-return image
+exists for that build. The stock-parser/no-USB baseline is safe.
 
 **Policy: UEP fire is opt-in.** The Q70T now leaves
 `/opt/usr/share/tvroot/uep-enable.off` in place, so the boot hook applies the
 masks, hosts sinkhole, and root agent but does not fire UEP. `fire-uep.sh`
-does it on demand; reboot afterwards for standby. A kernel-side fix
-(`PF_NOFREEZE` on the parked task, or a trigger that does not park a user
-task) is an open research item.
+does it on demand; reboot afterwards for standby. The kernel-side work is a
+source-only `PF_NOFREEZE` prototype in
+[`tools/kmod/uep_unfreeze.c`](tools/kmod/uep_unfreeze.c) (unbuilt/untested;
+the build environment is gone), or a trigger that does not park a user task.
 
 **Try counter v9.** `debloat.sh` v9 writes an attempt marker immediately
 before the fire, not before the 60 s wait. A previous attempt without a

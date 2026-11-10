@@ -107,7 +107,8 @@ A target page states the firmware string next to any address table. Addresses ar
 | `tools/uep-test.sh` | Empirically determines which script invocations UEP allows |
 | `tools/capscan.sh` | Compact capability-bearing binary inventory |
 | `tools/tee-client/` | The TrustZone client that decrypts the firmware container |
-| `tools/persistent-hook/` | Same-size `profile.d` patcher, boot hook, debloat, rollback |
+| `tools/kmod/` | Source-only `PF_NOFREEZE` prototype for the parked UEP task (unbuilt/untested) |
+| `persistent-hook/` | Same-size `profile.d` patcher, boot hook, debloat, rollback, manual UEP fire |
 
 ---
 

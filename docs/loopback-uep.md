@@ -79,12 +79,19 @@ kernel thread:
   is 20 s, so a standby transition can fail and restart the TV. The same
   behavior was reported on a Q85R (Lolinho77).
 
+**Q85R clean-return attempt (2026-11-09).** On `QE65Q85RATXXU` /
+`T-MSMDEUC-1500.9`, a stage that restored the stack and returned instead of
+parking was unstable; made persistent, it boot-looped. No verified clean-return
+image exists for that build. The park is deliberate; it is not an exFAT bug to
+be fixed by a normal return.
+
 The practical consequence: **boot-time UEP-down is opt-in**. The default
 `debloat.sh` starts the root agent and debloat but leaves UEP up; use
 [`persistent-hook/fire-uep.sh`](../persistent-hook/fire-uep.sh) when you need
-root SSH or unsigned binaries, and reboot afterwards if standby must work. A
-kernel-side fix that sets `PF_NOFREEZE` on the parked task (or a trigger that
-does not park a user task) is an open research item.
+root SSH or unsigned binaries, and reboot afterwards if standby must work. The
+two kernel-side options are a trigger that does not park a user task, or
+[`tools/kmod/uep_unfreeze.c`](../tools/kmod/uep_unfreeze.c), a source-only
+`PF_NOFREEZE` prototype (unbuilt/untested).
 
 ## Procedure
 
